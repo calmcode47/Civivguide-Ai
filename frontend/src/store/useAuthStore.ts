@@ -1,10 +1,8 @@
 import { create } from 'zustand';
-import { auth, googleProvider } from '@/lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged, User, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { useChatStore } from './useChatStore';
 
 interface AuthState {
-  user: User | null;
+  user: any | null;
   loading: boolean;
   error: string | null;
 }
@@ -17,40 +15,30 @@ interface AuthActions {
 
 export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   user: null,
-  loading: true,
+  loading: false,
   error: null,
 
   init: () => {
-    // Set persistence to SESSION so it logs out when browser is closed
-    setPersistence(auth, browserSessionPersistence).catch(err => console.error('Auth persistence error:', err));
-
-    onAuthStateChanged(auth, (user) => {
-      set({ user, loading: false });
-      if (!user) {
-        useChatStore.getState().clearAllSessions();
-      }
-    });
+    // Mock initialization
+    set({ loading: false });
   },
 
   login: async () => {
-    set({ loading: true, error: null });
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // loading state will be set to false by onAuthStateChanged
-    } catch (err: any) {
-      set({ error: err.message, loading: false });
-    }
+    // Mock login
+    set({ loading: true });
+    setTimeout(() => {
+      set({ 
+        user: { displayName: 'Guest User', email: 'guest@example.com' }, 
+        loading: false 
+      });
+    }, 500);
   },
 
   logout: async () => {
-    set({ loading: true, error: null });
-    try {
-      await signOut(auth);
+    set({ loading: true });
+    setTimeout(() => {
+      set({ user: null, loading: false });
       useChatStore.getState().clearAllSessions();
-      // Wait a bit or let onAuthStateChanged handle it
-      set({ loading: false });
-    } catch (err: any) {
-      set({ error: err.message, loading: false });
-    }
+    }, 300);
   },
 }));

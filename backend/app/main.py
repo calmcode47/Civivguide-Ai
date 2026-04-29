@@ -23,7 +23,13 @@ except Exception:
     # Allow the module to be imported (and `/health` to work) even if
     # env vars / `.env` aren't present in the current environment.
     class _FallbackSettings:  # noqa: N801
-        ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:5173"]
+        ALLOWED_ORIGINS = [
+            "http://localhost:3000", 
+            "http://localhost:5173", 
+            "http://localhost:5174", 
+            "http://localhost:5175", 
+            "http://localhost:5176"
+        ]
         RATE_LIMIT_PER_MINUTE = 30
         GEMINI_API_KEY = ""
         GOOGLE_CLOUD_PROJECT = ""

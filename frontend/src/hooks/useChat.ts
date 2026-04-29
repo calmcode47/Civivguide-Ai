@@ -49,23 +49,10 @@ export function useChat() {
       // 3. Call backend API
       const currentSessionAfterUpdate = getActiveSession();
       
-      // Get ID token if user is logged in
-      let idToken = null;
-      try {
-        const { auth } = await import('@/lib/firebase');
-        if (auth.currentUser) {
-          idToken = await auth.currentUser.getIdToken();
-        }
-      } catch (e) {
-        console.warn('Firebase auth not available for token fetching');
-      }
-
       const response = await apiClient.post('/api/chat', {
         message: content.trim(),
         session_id: currentSessionAfterUpdate?.id,
         user_context: currentSessionAfterUpdate?.userContext || 'general'
-      }, {
-        headers: idToken ? { Authorization: `Bearer ${idToken}` } : {}
       });
       
       const { reply, suggestions } = response.data.data;
