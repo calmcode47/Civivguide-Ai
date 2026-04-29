@@ -27,8 +27,20 @@ class AssistantResult:
 
 
 class AssistantService:
-    def __init__(self, gemini_service: GeminiService | None) -> None:
+    def __init__(
+        self,
+        gemini_service: GeminiService | None,
+        *,
+        prompt_history_message_limit: int = 6,
+        chat_max_output_tokens: int = 500,
+        plan_max_output_tokens: int = 650,
+        ballot_max_output_tokens: int = 300,
+    ) -> None:
         self.gemini_service = gemini_service
+        self.prompt_history_message_limit = max(prompt_history_message_limit, 0)
+        self.chat_max_output_tokens = max(chat_max_output_tokens, 1)
+        self.plan_max_output_tokens = max(plan_max_output_tokens, 1)
+        self.ballot_max_output_tokens = max(ballot_max_output_tokens, 1)
 
     def normalize_persona(self, user_context: str | None) -> str:
         if not user_context:
@@ -96,7 +108,7 @@ class AssistantService:
         notes = INTENT_NOTES.get(intent, INTENT_NOTES["general"])
         notes_block = "\n".join(f"- {note}" for note in notes)
         suggestions = self.get_suggestions(persona=persona, intent=intent)
-        suggestion_block = "\n".join(f"- {item}" for item in suggestions[:3])
+        suggestion_block = "\n".join(f"- {item}" for item in suggestions[:2])
 
         return f"""
 Language: {language}
@@ -116,10 +128,11 @@ Latest user question:
 {message}
 
 Answer requirements:
-- Use a short opening line that directly addresses the user's situation.
-- Give clear numbered steps.
-- If the question depends on current dates, booth assignments, or constituency-specific rules, explicitly say the user should verify on the official ECI or Voters' Service Portal.
-- End with a short "Next helpful questions" line only if it feels natural.
+- Open with one direct sentence for this user.
+- Use short numbered steps when explaining a process.
+- Keep the answer concise and practical.
+- Mention official verification only when the answer depends on live dates, booth assignments, or constituency-specific rules.
+- Skip filler, long recaps, and internal reasoning.
 - Do not mention internal intent detection.
 
 Useful follow-up directions:
@@ -163,6 +176,11 @@ Useful follow-up directions:
         intent = self.detect_intent(message)
         suggestions = self.get_suggestions(persona=persona, intent=intent)
         sources = self.get_sources(intent)
+        prompt_history = (
+            history[-self.prompt_history_message_limit :]
+            if self.prompt_history_message_limit
+            else []
+        )
 
         if self.gemini_service is None:
             reply = self._fallback_chat(message=message, persona=persona, intent=intent)
@@ -170,13 +188,16 @@ Useful follow-up directions:
 
         prompt = self._chat_prompt(
             message=message,
-            history=history,
+            history=prompt_history,
             language=language,
             persona=persona,
             intent=intent,
         )
         try:
-            reply = await self.gemini_service.complete(prompt)
+            reply = await self.gemini_service.complete(
+                prompt,
+                max_output_tokens=self.chat_max_output_tokens,
+            )
         except Exception:
             reply = self._fallback_chat(message=message, persona=persona, intent=intent)
 
@@ -204,6 +225,7 @@ Requirements:
 - Add a numbered checklist.
 - Add a section called "What to verify officially".
 - Add a section called "What to carry or confirm".
+- Keep the checklist compact and practical.
 - Never invent dates.
 - Mention ECI or Voters' Service Portal as the official place to verify live details.
 """.strip()
@@ -225,7 +247,10 @@ Requirements:
             )
         else:
             try:
-                reply = await self.gemini_service.complete(prompt)
+                reply = await self.gemini_service.complete(
+                    prompt,
+                    max_output_tokens=self.plan_max_output_tokens,
+                )
             except Exception:
                 reply = (
                     "## My Voting Plan\n\n"
@@ -258,6 +283,7 @@ Requirements:
 - The first paragraph should define the term in very simple language.
 - The second paragraph should explain why it matters to a voter or candidate.
 - Avoid legal jargon unless you immediately explain it.
+- Keep the answer tight and plain-spoken.
 """.strip()
 
         related_terms = ["EVM", "VVPAT", "NOTA", "constituency"]
@@ -268,7 +294,10 @@ Requirements:
             )
         else:
             try:
-                reply = await self.gemini_service.complete(prompt)
+                reply = await self.gemini_service.complete(
+                    prompt,
+                    max_output_tokens=self.ballot_max_output_tokens,
+                )
             except Exception:
                 reply = (
                     f"**{payload.term}** means: {payload.context}\n\n"

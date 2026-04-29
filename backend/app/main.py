@@ -33,14 +33,20 @@ async def lifespan(app: FastAPI):
         try:
             gemini_service = GeminiService(
                 api_key=settings.GEMINI_API_KEY,
-                model_name=settings.GEMINI_MODEL,
+                model_names=settings.resolved_gemini_models,
             )
         except Exception:
             gemini_service = None
 
     app.state.settings = settings
     app.state.session_store = build_session_store(settings)
-    app.state.assistant_service = AssistantService(gemini_service)
+    app.state.assistant_service = AssistantService(
+        gemini_service,
+        prompt_history_message_limit=settings.PROMPT_HISTORY_MESSAGE_LIMIT,
+        chat_max_output_tokens=settings.GEMINI_CHAT_MAX_OUTPUT_TOKENS,
+        plan_max_output_tokens=settings.GEMINI_PLAN_MAX_OUTPUT_TOKENS,
+        ballot_max_output_tokens=settings.GEMINI_BALLOT_MAX_OUTPUT_TOKENS,
+    )
     yield
 
 

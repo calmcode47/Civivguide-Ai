@@ -18,6 +18,10 @@ class Settings(BaseSettings):
 
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODELS: list[str] = Field(default_factory=list)
+    GEMINI_CHAT_MAX_OUTPUT_TOKENS: int = 500
+    GEMINI_PLAN_MAX_OUTPUT_TOKENS: int = 650
+    GEMINI_BALLOT_MAX_OUTPUT_TOKENS: int = 300
     GOOGLE_CLOUD_PROJECT: str = ""
     FIRESTORE_PROJECT_ID: str = ""
     FIRESTORE_CREDENTIALS_FILE: str = ""
@@ -32,7 +36,19 @@ class Settings(BaseSettings):
     )
     RATE_LIMIT_PER_MINUTE: int = 30
     SESSION_HISTORY_LIMIT: int = 20
+    PROMPT_HISTORY_MESSAGE_LIMIT: int = 6
     ENVIRONMENT: str = "development"
+
+    @field_validator("GEMINI_MODELS", mode="before")
+    @classmethod
+    def parse_gemini_models(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        if isinstance(value, (list, tuple)):
+            return [str(item).strip() for item in value if str(item).strip()]
+        raise TypeError("GEMINI_MODELS must be a comma-separated string or list")
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
@@ -44,6 +60,18 @@ class Settings(BaseSettings):
         if isinstance(value, (list, tuple)):
             return [str(item).strip() for item in value if str(item).strip()]
         raise TypeError("ALLOWED_ORIGINS must be a comma-separated string or list")
+
+    @property
+    def resolved_gemini_models(self) -> list[str]:
+        if self.GEMINI_MODELS:
+            return list(dict.fromkeys(self.GEMINI_MODELS))
+
+        primary = self.GEMINI_MODEL.strip() or "gemini-2.0-flash"
+        fallback = "gemini-1.5-flash"
+        models = [primary]
+        if fallback != primary:
+            models.append(fallback)
+        return models
 
 
 @lru_cache(maxsize=1)

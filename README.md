@@ -15,7 +15,7 @@ This project is designed for users who need reliable election-process help witho
 - Answers free-form election-process questions.
 - Adjusts guidance for `First-Time Voter`, `Returning Voter`, `Candidate`, and `Observer`.
 - Avoids inventing live dates or constituency-specific facts.
-- Falls back to grounded built-in guidance if Gemini is not configured.
+- Uses a Gemini model chain first, then falls back to grounded built-in guidance if Gemini is unavailable or throttled.
 
 ### 2. Interactive Timeline
 
@@ -64,7 +64,7 @@ This project is designed for users who need reliable election-process help witho
 
 - FastAPI
 - Pydantic v2
-- Gemini API integration with deterministic fallback
+- Gemini API integration with model-chain fallback plus deterministic fallback
 - Firestore-backed session store with memory fallback
 - SlowAPI rate limiting
 - Pytest coverage for core API flows
@@ -76,6 +76,7 @@ This project is designed for users who need reliable election-process help witho
 - Generates conversational explanations.
 - Produces personalised voting plans.
 - Simplifies election and ballot terminology.
+- Tries a lightweight ordered model chain before dropping to deterministic local guidance.
 
 ### Firestore
 
@@ -124,13 +125,18 @@ This project is designed for users who need reliable election-process help witho
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODELS=gemini-2.0-flash,gemini-1.5-flash
+# GEMINI_MODEL=gemini-2.0-flash
+GEMINI_CHAT_MAX_OUTPUT_TOKENS=500
+GEMINI_PLAN_MAX_OUTPUT_TOKENS=650
+GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300
 GOOGLE_CLOUD_PROJECT=august-now-472515-h2
 FIRESTORE_PROJECT_ID=projects-fef16
 FIRESTORE_CREDENTIALS_FILE=/secrets/firestore-service-account.json
 ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://projects-fef16.web.app,https://projects-fef16.firebaseapp.com
 RATE_LIMIT_PER_MINUTE=30
 SESSION_HISTORY_LIMIT=20
+PROMPT_HISTORY_MESSAGE_LIMIT=6
 ENVIRONMENT=production
 ```
 
@@ -154,13 +160,18 @@ VITE_FIREBASE_MEASUREMENT_ID=G-24PVDN50KW
 
 - `backend/app/services/assistant_service.py`
   - detects intent and persona
-  - builds grounded prompts
-  - returns deterministic fallback guidance when Gemini is unavailable
+  - trims prompt history and applies task-specific token caps
+  - returns deterministic fallback guidance when the Gemini model chain is unavailable
 
 - `backend/app/services/session_store.py`
   - supports Firestore and in-memory modes
   - allows split-project Firestore configuration
   - prefers explicit service-account credentials over ADC
+
+- `backend/app/services/gemini_service.py`
+  - tries `gemini-2.0-flash` first and `gemini-1.5-flash` second by default
+  - retries on quota, rate-limit, resource-exhausted, and model-unavailable style errors
+  - preserves a final local fallback path through the assistant service
 
 - `backend/app/data/election_content.py`
   - stores India-specific timeline content, suggestions, and official references
@@ -214,10 +225,10 @@ git ls-files -z | xargs -0 du -ch 2>/dev/null | tail -n 1
 
 Results:
 
-- `5 passed` in backend tests
+- `9 passed` in backend tests
 - backend compile pass
 - frontend production build pass
-- tracked repository size: about `720K`, well under the `10 MB` limit
+- tracked repository size: about `812K`, well under the `10 MB` limit
 
 Additional browser smoke checks were completed locally for:
 
@@ -245,7 +256,7 @@ gcloud run deploy civicmind-api \
   --project august-now-472515-h2 \
   --region asia-south1 \
   --allow-unauthenticated \
-  --set-env-vars ENVIRONMENT=production,GEMINI_MODEL=gemini-2.0-flash,GOOGLE_CLOUD_PROJECT=august-now-472515-h2,FIRESTORE_PROJECT_ID=projects-fef16,ALLOWED_ORIGINS=https://projects-fef16.web.app,https://projects-fef16.firebaseapp.com \
+  --set-env-vars ENVIRONMENT=production,GEMINI_MODELS=gemini-2.0-flash,gemini-1.5-flash,GEMINI_CHAT_MAX_OUTPUT_TOKENS=500,GEMINI_PLAN_MAX_OUTPUT_TOKENS=650,GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300,PROMPT_HISTORY_MESSAGE_LIMIT=6,GOOGLE_CLOUD_PROJECT=august-now-472515-h2,FIRESTORE_PROJECT_ID=projects-fef16,ALLOWED_ORIGINS=https://projects-fef16.web.app,https://projects-fef16.firebaseapp.com \
   --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest,FIRESTORE_CREDENTIALS_FILE=FIRESTORE_SERVICE_ACCOUNT_PATH:latest
 ```
 
@@ -271,11 +282,11 @@ firebase deploy --project projects-fef16 --only hosting
 As of **April 29, 2026**, two external blockers remain:
 
 1. The Cloud Run host project `august-now-472515-h2` cannot enable `run.googleapis.com`, `cloudbuild.googleapis.com`, `artifactregistry.googleapis.com`, or `secretmanager.googleapis.com` because billing is not enabled on project number `854444982376`.
-2. No Gemini API key has been provided in a deployable secret or environment value, so the backend cannot be deployed in the intended `gemini_ready=true` production state.
+2. The current git credential still does not have write access to `calmcode43/Civicguide-Ai`, so `origin/main` cannot be pushed from this machine until repository access is corrected.
 
 Because of those blockers, the final live URLs are still pending:
 
 - Frontend URL: pending production deployment
 - Backend URL: pending Cloud Run deployment
 
-Once billing is enabled on `august-now-472515-h2` and a Gemini API key is supplied, the repo is ready for the final deploy-and-URL update pass.
+Once billing is enabled on `august-now-472515-h2` and repository write access is fixed, the repo is ready for the final deploy-and-URL update pass.
