@@ -9,8 +9,13 @@ def make_client() -> TestClient:
 
 def test_health_endpoint_reports_backend_status() -> None:
     with make_client() as client:
+        root_response = client.get("/")
         response = client.get("/api/health")
 
+    assert root_response.status_code == 200
+    root_payload = root_response.json()["data"]
+    assert root_payload["service"] == "civicmind-api"
+    assert root_payload["health_path"] == "/api/health"
     assert response.status_code == 200
     payload = response.json()["data"]
     assert payload["service"] == "civicmind-api"

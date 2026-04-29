@@ -101,10 +101,10 @@ This project is designed for users who need reliable election-process help witho
 
 ### Frontend Hosting Project
 
-- Firebase project id: `projects-fef16`
+- Firebase project id: `new--project-82b99`
 - Hosting URLs:
-  - `https://projects-fef16.web.app`
-  - `https://projects-fef16.firebaseapp.com`
+  - `https://new--project-82b99.web.app`
+  - `https://new--project-82b99.firebaseapp.com`
 
 ### Backend Hosting Project
 
@@ -113,10 +113,11 @@ This project is designed for users who need reliable election-process help witho
 - Project name: `My Project 28346`
 - Cloud Run region: `asia-south1`
 - Cloud Run service name: `civicmind-api`
+- Backend URL: `https://civicmind-api-854444982376.asia-south1.run.app`
 
 ### Firestore Project
 
-- Firestore data project: `projects-fef16`
+- Firestore data project: `new--project-82b99`
 - Access pattern: Cloud Run uses a Firestore service-account credential from Secret Manager or a mounted secret file
 
 ## Runtime Configuration
@@ -131,9 +132,9 @@ GEMINI_CHAT_MAX_OUTPUT_TOKENS=500
 GEMINI_PLAN_MAX_OUTPUT_TOKENS=650
 GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300
 GOOGLE_CLOUD_PROJECT=august-now-472515-h2
-FIRESTORE_PROJECT_ID=projects-fef16
+FIRESTORE_PROJECT_ID=new--project-82b99
 FIRESTORE_CREDENTIALS_FILE=/secrets/firestore-service-account.json
-ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://projects-fef16.web.app,https://projects-fef16.firebaseapp.com
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://new--project-82b99.web.app,https://new--project-82b99.firebaseapp.com
 RATE_LIMIT_PER_MINUTE=30
 SESSION_HISTORY_LIMIT=20
 PROMPT_HISTORY_MESSAGE_LIMIT=6
@@ -143,15 +144,15 @@ ENVIRONMENT=production
 ### Frontend environment
 
 ```env
-VITE_API_BASE_URL=https://YOUR_CLOUD_RUN_URL
-VITE_SITE_URL=https://projects-fef16.web.app
-VITE_FIREBASE_API_KEY=AIzaSyB0A3P_ilohCTQ0rWJdUg8iOTIO1iKjaEk
-VITE_FIREBASE_AUTH_DOMAIN=projects-fef16.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=projects-fef16
-VITE_FIREBASE_STORAGE_BUCKET=projects-fef16.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=542866398385
-VITE_FIREBASE_APP_ID=1:542866398385:web:a8971691743b6d92e71690
-VITE_FIREBASE_MEASUREMENT_ID=G-24PVDN50KW
+VITE_API_BASE_URL=https://civicmind-api-854444982376.asia-south1.run.app
+VITE_SITE_URL=https://new--project-82b99.web.app
+VITE_FIREBASE_API_KEY=AIzaSyB3L1O0T3BShynmaPlRP66o_EzQ_H4WIIA
+VITE_FIREBASE_AUTH_DOMAIN=new--project-82b99.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=new--project-82b99
+VITE_FIREBASE_STORAGE_BUCKET=new--project-82b99.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=623665232203
+VITE_FIREBASE_APP_ID=1:623665232203:web:5a99fc4dff2c34f04550ce
+VITE_FIREBASE_MEASUREMENT_ID=G-DQ8DX55P9Y
 ```
 
 ## Backend Design
@@ -178,6 +179,7 @@ VITE_FIREBASE_MEASUREMENT_ID=G-24PVDN50KW
 
 ### API surface
 
+- `GET /`
 - `GET /api/health`
 - `GET /api/timeline`
 - `GET /api/suggestions`
@@ -256,7 +258,7 @@ gcloud run deploy civicmind-api \
   --project august-now-472515-h2 \
   --region asia-south1 \
   --allow-unauthenticated \
-  --set-env-vars ENVIRONMENT=production,GEMINI_MODELS=gemini-2.0-flash,gemini-1.5-flash,GEMINI_CHAT_MAX_OUTPUT_TOKENS=500,GEMINI_PLAN_MAX_OUTPUT_TOKENS=650,GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300,PROMPT_HISTORY_MESSAGE_LIMIT=6,GOOGLE_CLOUD_PROJECT=august-now-472515-h2,FIRESTORE_PROJECT_ID=projects-fef16,ALLOWED_ORIGINS=https://projects-fef16.web.app,https://projects-fef16.firebaseapp.com \
+  --set-env-vars ENVIRONMENT=production,GEMINI_MODELS=gemini-2.0-flash,gemini-1.5-flash,GEMINI_CHAT_MAX_OUTPUT_TOKENS=500,GEMINI_PLAN_MAX_OUTPUT_TOKENS=650,GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300,PROMPT_HISTORY_MESSAGE_LIMIT=6,GOOGLE_CLOUD_PROJECT=august-now-472515-h2,FIRESTORE_PROJECT_ID=new--project-82b99,ALLOWED_ORIGINS=https://new--project-82b99.web.app,https://new--project-82b99.firebaseapp.com \
   --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest,FIRESTORE_CREDENTIALS_FILE=FIRESTORE_SERVICE_ACCOUNT_PATH:latest
 ```
 
@@ -265,7 +267,7 @@ gcloud run deploy civicmind-api \
 ```bash
 cd frontend
 npm run build
-firebase deploy --project projects-fef16 --only hosting
+firebase deploy --project new--project-82b99 --only hosting
 ```
 
 ## Assumptions
@@ -277,16 +279,21 @@ firebase deploy --project projects-fef16 --only hosting
 
 ## Deployment Status
 
-**Live deployment is not completed yet.**
+**Live deployment completed on April 29, 2026**
 
-As of **April 29, 2026**, two external blockers remain:
+- Frontend URL: `https://new--project-82b99.web.app`
+- Alternate frontend URL: `https://new--project-82b99.firebaseapp.com`
+- Backend URL: `https://civicmind-api-854444982376.asia-south1.run.app`
 
-1. The Cloud Run host project `august-now-472515-h2` cannot enable `run.googleapis.com`, `cloudbuild.googleapis.com`, `artifactregistry.googleapis.com`, or `secretmanager.googleapis.com` because billing is not enabled on project number `854444982376`.
-2. The current git credential still does not have write access to `calmcode43/Civicguide-Ai`, so `origin/main` cannot be pushed from this machine until repository access is corrected.
+Live checks completed after deployment:
 
-Because of those blockers, the final live URLs are still pending:
+- `GET /` returns the CivicMind API status payload instead of `404`
+- `GET /api/health` returns `gemini_ready=true` and `firestore_project_id=new--project-82b99`
+- a real browser-side assistant chat from the deployed frontend succeeded against the deployed backend
+- Firestore-backed session records are being written in the new Firebase project
 
-- Frontend URL: pending production deployment
-- Backend URL: pending Cloud Run deployment
+The backend and frontend use a low-cost deployment profile:
 
-Once billing is enabled on `august-now-472515-h2` and repository write access is fixed, the repo is ready for the final deploy-and-URL update pass.
+- Cloud Run stays scale-to-zero with `min-instances=0`
+- Firebase Hosting serves the built SPA statically
+- Gemini uses short prompts, capped output tokens, and a model-chain fallback before deterministic local guidance

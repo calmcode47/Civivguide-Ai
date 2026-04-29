@@ -11,7 +11,7 @@ from slowapi.extension import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
-from app.models.schemas import ApiResponse, HealthPayload
+from app.models.schemas import ApiResponse, HealthPayload, RootPayload
 from app.routers.assistant import router as assistant_router
 from app.routers.chat import router as chat_router
 from app.routers.sessions import router as sessions_router
@@ -62,7 +62,7 @@ def create_app() -> FastAPI:
     app.add_middleware(SlowAPIMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.ALLOWED_ORIGINS,
+        allow_origins=settings.resolved_allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
         allow_headers=["*"],
@@ -73,6 +73,17 @@ def create_app() -> FastAPI:
     app.include_router(assistant_router)
     app.include_router(translate_router)
     app.include_router(timeline_router)
+
+    @app.get("/", response_model=ApiResponse[RootPayload], tags=["health"])
+    async def root_status() -> ApiResponse[RootPayload]:
+        return ApiResponse(
+            data=RootPayload(
+                service="civicmind-api",
+                version=VERSION,
+                status="ok",
+                health_path="/api/health",
+            )
+        )
 
     @app.get("/health", response_model=ApiResponse[HealthPayload], tags=["health"])
     @app.get("/api/health", response_model=ApiResponse[HealthPayload], tags=["health"])
