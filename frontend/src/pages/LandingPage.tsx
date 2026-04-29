@@ -219,7 +219,7 @@ export default function LandingPage() {
         }}
       >
         <div className="content-width text-center">
-          <h2 className="text-4xl mb-16">How CivicGuide AI Works</h2>
+          <h2 className="text-4xl mb-16">How CivicMind Works</h2>
 
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-0">
             {HOW_IT_WORKS.map((item, idx) => (
@@ -254,7 +254,7 @@ export default function LandingPage() {
             Your AI guide to the democratic process is one click away.
           </p>
           <GoldButton size="lg" href="/assistant">
-            Talk to CivicGuide →
+            Talk to CivicMind →
           </GoldButton>
         </div>
       </section>
@@ -266,7 +266,7 @@ export default function LandingPage() {
         <div className="content-width flex flex-col md:flex-row items-center justify-between gap-8 text-sm text-text-secondary">
           {/* Logo Left */}
           <div className="flex items-center gap-2">
-            <span className="font-display text-lg text-white font-bold">CivicGuide</span>
+            <span className="font-display text-lg text-white font-bold">CivicMind</span>
           </div>
 
           {/* Center Powered By */}
@@ -280,7 +280,7 @@ export default function LandingPage() {
 
           {/* Right Copyright */}
           <div>
-            © 2024 CivicGuide AI. Built for Google PromptWars.
+            Built for Google Prompt Wars
           </div>
         </div>
       </footer>

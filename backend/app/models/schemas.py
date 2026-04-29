@@ -1,20 +1,82 @@
 from __future__ import annotations
 
-from typing import Literal
+from datetime import datetime
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
+
+LanguageCode = Literal["en", "hi"]
+T = TypeVar("T")
+
+
+class ApiResponse(BaseModel, Generic[T]):
+    status: Literal["success", "error"] = "success"
+    data: T
+    error: str | None = None
+
+
+class OfficialResource(BaseModel):
+    title: str
+    url: str
+
+
+class HealthPayload(BaseModel):
+    service: str
+    version: str
+    environment: str
+    backend_ready: bool
+    gemini_ready: bool
+    firestore_mode: Literal["firestore", "memory"]
+    rate_limit_per_minute: int
+    cloud_project_id: str | None = None
+    firestore_project_id: str | None = None
 
 
 class ChatRequest(BaseModel):
     session_id: str | None = None
     message: str = Field(..., min_length=1, max_length=2000)
-    language: Literal["en", "hi"] = "en"
+    language: LanguageCode = "en"
+    user_context: str = Field(default="general", max_length=80)
 
 
-class ChatResponse(BaseModel):
+class ChatReplyPayload(BaseModel):
     session_id: str
     reply: str
-    sources: list[str] = []
+    intent: str
+    suggestions: list[str] = Field(default_factory=list)
+    sources: list[OfficialResource] = Field(default_factory=list)
+
+
+class SessionMessage(BaseModel):
+    id: str
+    role: Literal["user", "assistant"]
+    content: str
+    language: LanguageCode = "en"
+    timestamp: datetime
+    intent: str | None = None
+
+
+class SessionSummary(BaseModel):
+    id: str
+    title: str
+    user_context: str
+    language: LanguageCode = "en"
+    message_count: int
+    updated_at: datetime
+
+
+class SessionListPayload(BaseModel):
+    sessions: list[SessionSummary] = Field(default_factory=list)
+
+
+class SessionDetailPayload(BaseModel):
+    session: SessionSummary
+    messages: list[SessionMessage] = Field(default_factory=list)
+
+
+class DeleteSessionPayload(BaseModel):
+    session_id: str
+    deleted: bool
 
 
 class ElectionStep(BaseModel):
@@ -34,33 +96,59 @@ class ElectionPhase(BaseModel):
     steps: list[ElectionStep]
 
 
-class ElectionTimelineResponse(BaseModel):
+class ElectionTimelinePayload(BaseModel):
     phases: list[ElectionPhase]
     total_steps: int
+    sources: list[OfficialResource] = Field(default_factory=list)
 
 
-class ApiResponse(BaseModel):
-    data: ElectionTimelineResponse
-    status: str = "success"
-    error: str | None = None
+class SuggestionsPayload(BaseModel):
+    persona: str
+    language: LanguageCode = "en"
+    suggestions: list[str] = Field(default_factory=list)
 
 
 class TranslateRequest(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, max_length=2000)
     target_language: str
 
 
-class TranslateResponse(BaseModel):
+class TranslatePayload(BaseModel):
     translated_text: str
     detected_source: str
 
 
-class TimelineEvent(BaseModel):
-    id: str
-    title: str
-    description: str
-    phase: str
-    order: int
-    icon: str
-    typical_duration_days: int
+class VotingPlanRequest(BaseModel):
+    registration_status: str = Field(..., min_length=1, max_length=120)
+    location_context: str = Field(..., min_length=1, max_length=120)
+    planning_focus: str = Field(..., min_length=1, max_length=120)
+    language: LanguageCode = "en"
 
+
+class VotingPlanPayload(BaseModel):
+    plan_markdown: str
+    suggestions: list[str] = Field(default_factory=list)
+    sources: list[OfficialResource] = Field(default_factory=list)
+
+
+class BallotDecodeRequest(BaseModel):
+    term: str = Field(..., min_length=1, max_length=120)
+    context: str = Field(..., min_length=1, max_length=500)
+    category: Literal["legal", "position", "procedure", "technology", "voter-aid"]
+    language: LanguageCode = "en"
+
+
+class BallotDecodePayload(BaseModel):
+    explanation: str
+    related_terms: list[str] = Field(default_factory=list)
+    sources: list[OfficialResource] = Field(default_factory=list)
+
+
+class FeedbackRequest(BaseModel):
+    session_id: str = Field(..., min_length=1, max_length=120)
+    rating: int = Field(..., ge=1, le=5)
+    comment: str | None = Field(default=None, max_length=500)
+
+
+class FeedbackPayload(BaseModel):
+    saved: bool

@@ -122,14 +122,14 @@ export default function NavBar() {
         {/* Logo */}
         <Link
           to="/"
-          aria-label="CivicGuide AI — Home"
+          aria-label="CivicMind — Home"
           className="flex items-center gap-2 no-underline"
         >
           <BallotIcon />
           <span
             className="font-display text-xl font-bold text-white tracking-tight"
           >
-            CivicGuide
+            CivicMind
           </span>
         </Link>
 

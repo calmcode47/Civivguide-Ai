@@ -1,102 +1,80 @@
+from __future__ import annotations
+
 import asyncio
 import queue
 import threading
-from typing import Any, AsyncGenerator, Iterable
+from typing import AsyncGenerator
 
 import google.generativeai as genai
 
-SYSTEM_PROMPT = """You are CivicMind, an expert assistant for the Indian election process.
+SYSTEM_PROMPT = """You are CivicMind, a neutral election-process assistant focused on India.
 
-You MUST understand the following domains and answer accordingly:
-1) Lok Sabha elections, Rajya Sabha elections, and State Assembly elections.
-2) Election Commission of India (ECI) processes including Model Code of Conduct (MCC), VVPAT, and EVM.
-3) Voter registration processes and the purpose of forms: Form 6, 6A, 6B, 6C, and Form 8.
-4) Election phases, nomination, campaign, and counting workflows.
+Your job is to explain election procedures clearly and safely.
 
-When explaining any process, use NUMBERED STEPS (1., 2., 3., ...).
-
-Never invent dates or deadlines. If dates are required, instruct the user to check official sources at: https://eci.gov.in
-
-Respond in the user's language provided in the prompt. If language is "hi", respond in Hindi; otherwise respond in English.
+Rules:
+1. Stay strictly non-partisan. Never persuade the user to support or oppose any party or candidate.
+2. Explain Indian election processes such as voter enrolment, electoral rolls, EVM/VVPAT, nomination, campaign rules, polling, counting, and government formation.
+3. Use plain language with numbered steps whenever the user asks how a process works.
+4. Never invent dates, live results, constituency-specific deadlines, or legal requirements you are not sure about.
+5. If the answer depends on current schedules or constituency-specific facts, tell the user to verify through official ECI resources.
+6. Keep the answer practical, short, and easy to act on.
+7. Use the language requested in the prompt.
 """
 
 
 class GeminiService:
-    # Model: gemini-2.0-flash
-    def __init__(self, api_key: str):
+    def __init__(self, *, api_key: str, model_name: str) -> None:
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not provided")
+            raise ValueError("GEMINI_API_KEY is not configured")
 
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(
-            "gemini-2.0-flash",
+            model_name=model_name,
             system_instruction=SYSTEM_PROMPT,
         )
 
-    def _format_history(self, history: Iterable[dict[str, Any]]) -> str:
-        # Expected history items: {"role": "user"|"assistant", "content": "..."}
-        lines: list[str] = []
-        for msg in history:
-            role = str(msg.get("role", "user"))
-            content = str(msg.get("content", "")).strip()
-            if not content:
-                continue
-            if role.lower() == "assistant":
-                lines.append(f"Assistant: {content}")
-            else:
-                lines.append(f"User: {content}")
-        return "\n".join(lines)
-
-    def _build_prompt(self, message: str, history: list[dict[str, Any]], language: str) -> str:
-        history_text = self._format_history(history)
-        safe_language = language if language in {"en", "hi"} else "en"
-        if history_text:
-            history_part = f"Conversation history:\n{history_text}\n\n"
-        else:
-            history_part = "Conversation history: (none)\n\n"
-
-        return (
-            f'User language: "{safe_language}"\n\n'
-            + history_part
-            + f"Latest user message:\n{message}\n\n"
-            + "Provide a clear, numbered, step-by-step response."
-        )
-
-    async def generate_response(
-        self, message: str, history: list[dict[str, Any]], language: str
-    ) -> str:
-        prompt = self._build_prompt(message=message, history=history, language=language)
-
-        def _sync_generate() -> str:
-            response = self.model.generate_content(prompt)
+    async def complete(self, prompt: str) -> str:
+        def _generate() -> str:
+            response = self.model.generate_content(
+                prompt,
+                generation_config={
+                    "temperature": 0.3,
+                    "top_p": 0.9,
+                    "max_output_tokens": 900,
+                },
+            )
             return (getattr(response, "text", None) or "").strip()
 
-        return await asyncio.to_thread(_sync_generate)
+        return await asyncio.to_thread(_generate)
 
-    async def stream_response(
-        self, message: str, history: list[dict[str, Any]], language: str
-    ) -> AsyncGenerator[str, None]:
-        prompt = self._build_prompt(message=message, history=history, language=language)
-
+    async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
         q: "queue.Queue[str | object]" = queue.Queue()
-        done_sentinel = object()
+        sentinel = object()
 
         def _producer() -> None:
             try:
-                for chunk in self.model.generate_content(prompt, stream=True):
+                for chunk in self.model.generate_content(
+                    prompt,
+                    stream=True,
+                    generation_config={
+                        "temperature": 0.3,
+                        "top_p": 0.9,
+                        "max_output_tokens": 900,
+                    },
+                ):
                     text = getattr(chunk, "text", None)
                     if text:
                         q.put(str(text))
-            except Exception as e:
-                q.put(f"[ERROR] {str(e)}")
+            except Exception as exc:
+                q.put(f"[ERROR] {exc}")
             finally:
-                q.put(done_sentinel)
+                q.put(sentinel)
 
         threading.Thread(target=_producer, daemon=True).start()
 
         loop = asyncio.get_running_loop()
         while True:
             item = await loop.run_in_executor(None, q.get)
-            if item is done_sentinel:
+            if item is sentinel:
                 break
             yield str(item)

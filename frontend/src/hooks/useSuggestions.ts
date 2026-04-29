@@ -1,29 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import apiClient from '../lib/apiClient';
+import type { ApiResponse, SuggestionsPayload } from '@/types';
 
-/**
- * useSuggestions
- * Custom hook to fetch initial chat suggestions for the Assistant page.
- * Fails silently by returning an empty array to maintain clean UX.
- */
-export function useSuggestions() {
+export function useSuggestions(persona: string) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    apiClient.get('/api/suggestions')
-      .then(res => {
-        // Backend returns { data: { suggestions: [...] } }
-        setSuggestions(res.data.data.suggestions || []);
+    setIsLoading(true);
+    apiClient
+      .get<ApiResponse<SuggestionsPayload>>('/api/suggestions', {
+        params: { persona, language: 'en' },
+      })
+      .then((response) => {
+        setSuggestions(response.data.data.suggestions ?? []);
       })
       .catch(() => {
-        // Silent fail — do not show error UI for suggestions
         setSuggestions([]);
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [persona]);
 
   return { suggestions, isLoading };
 }

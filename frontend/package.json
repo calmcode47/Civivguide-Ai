@@ -1,11 +1,11 @@
 {
-  "name": "civicguide-ai-frontend",
+  "name": "civicmind-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && node ./scripts/build.mjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
@@ -15,6 +15,7 @@
     "@react-three/fiber": "^8.17.0",
     "axios": "^1.7.7",
     "clsx": "^2.1.1",
+    "firebase": "^11.10.0",
     "framer-motion": "^11.5.0",
     "gsap": "^3.12.5",
     "react": "^18.3.1",

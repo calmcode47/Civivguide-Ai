@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import SEO from '@/components/SEO';
 import { GoldButton } from '@/components/ui';
 import apiClient from '@/lib/apiClient';
-import ReactMarkdown from 'react-markdown';
-
-// =============================================================================
-// Constants & Types
-// =============================================================================
+import type { ApiResponse, OfficialResource } from '@/types';
 
 interface PlanStep {
   id: string;
@@ -16,87 +13,114 @@ interface PlanStep {
   options: { label: string; value: string; description: string }[];
 }
 
+interface VotingPlanPayload {
+  plan_markdown: string;
+  suggestions: string[];
+  sources: OfficialResource[];
+}
+
 const WIZARD_STEPS: PlanStep[] = [
   {
     id: 'registration',
     title: 'Registration Status',
-    question: 'Are you currently registered to vote?',
+    question: 'Which best describes your voter registration situation?',
     options: [
-      { label: 'Yes, I am registered', value: 'registered', description: 'I am all set to vote in the upcoming election.' },
-      { label: 'No, I need to register', value: 'not_registered', description: 'I want to know how and where to register.' },
-      { label: 'I am not sure', value: 'unsure', description: 'Help me check my registration status.' },
-    ],
-  },
-  {
-    id: 'method',
-    title: 'Voting Method',
-    question: 'How do you plan to cast your ballot?',
-    options: [
-      { label: 'In-Person on Election Day', value: 'in_person', description: 'I will go to my local polling station on the day.' },
-      { label: 'Early Voting', value: 'early', description: 'I want to vote before Election Day at an early voting site.' },
-      { label: 'Mail-In / Absentee', value: 'mail', description: 'I want to vote from home using a mail-in ballot.' },
+      {
+        label: 'I need new registration',
+        value: 'Need new voter registration',
+        description: 'I am enrolling for the first time or I am not yet sure I am on the voter list.',
+      },
+      {
+        label: 'I am already registered',
+        value: 'Already registered and mostly ready',
+        description: 'I mainly need booth, document, and polling-day guidance.',
+      },
+      {
+        label: 'I need correction or transfer',
+        value: 'Need correction or address transfer',
+        description: 'My name, address, or other voter details may need an update.',
+      },
     ],
   },
   {
     id: 'location',
-    title: 'Your Location',
-    question: 'Which state or region will you be voting in?',
+    title: 'Location Context',
+    question: 'What is your voting situation right now?',
     options: [
-      { label: 'California', value: 'California', description: 'West Coast voting rules.' },
-      { label: 'Texas', value: 'Texas', description: 'Southern voting regulations.' },
-      { label: 'New York', value: 'New York', description: 'East Coast voting procedures.' },
-      { label: 'Other / International', value: 'Other', description: 'I am voting from elsewhere or abroad.' },
+      {
+        label: 'Voting from home constituency',
+        value: 'Voting from my home constituency',
+        description: 'I expect to vote from the constituency where I normally live.',
+      },
+      {
+        label: 'Away from home or recently moved',
+        value: 'Away from home or recently moved',
+        description: 'I need clarity on transfer, timing, or travel planning.',
+      },
+      {
+        label: 'Need support or accessibility planning',
+        value: 'Need accessibility or assistance planning',
+        description: 'I want help planning booth access, assistance, or early preparation.',
+      },
+    ],
+  },
+  {
+    id: 'focus',
+    title: 'Planning Focus',
+    question: 'What kind of plan should the assistant generate?',
+    options: [
+      {
+        label: 'Booth and documents',
+        value: 'Booth verification and document checklist',
+        description: 'Focus on ID proof, voter details, and last-mile verification.',
+      },
+      {
+        label: 'Travel and timing',
+        value: 'Travel, timing, and backup planning',
+        description: 'Focus on scheduling, travel, and avoiding last-minute issues.',
+      },
+      {
+        label: 'Polling process clarity',
+        value: 'Understand the polling-day process',
+        description: 'Focus on what will happen step by step at the polling station.',
+      },
     ],
   },
 ];
 
-// =============================================================================
-// VotingPlanPage
-// =============================================================================
-
 export default function VotingPlanPage() {
-  const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<string | null>(null);
+  const [sources, setSources] = useState<OfficialResource[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const currentStep = WIZARD_STEPS[currentStepIdx];
-  const isLastStep = currentStepIdx === WIZARD_STEPS.length - 1;
+  const currentStep = WIZARD_STEPS[currentStepIndex];
+  const isLastStep = currentStepIndex === WIZARD_STEPS.length - 1;
 
   const handleSelect = (value: string) => {
-    setSelections(prev => ({ ...prev, [currentStep.id]: value }));
+    setSelections((prev) => ({ ...prev, [currentStep.id]: value }));
     if (!isLastStep) {
-      setTimeout(() => setCurrentStepIdx(prev => prev + 1), 300);
+      setTimeout(() => setCurrentStepIndex((prev) => prev + 1), 250);
     }
   };
 
   const generatePlan = async () => {
     setIsGenerating(true);
     setError(null);
-    try {
-      const prompt = `Generate a personalized "My Voting Plan" checklist based on these details:
-      - Registration Status: ${selections.registration}
-      - Voting Method: ${selections.method}
-      - State: ${selections.location}
-      
-      Provide a concise, professional markdown checklist including:
-      1. Action items (e.g., "Check polling location at [link]")
-      2. Key deadlines (Registration, Ballot request, Election Day)
-      3. Required IDs/Documents
-      4. A motivational closing sentence.
-      Keep it structured with headers and bullet points.`;
 
-      const response = await apiClient.post('/api/chat', {
-        message: prompt,
-        session_id: `plan_${Date.now()}`,
-        user_context: 'General Voter'
+    try {
+      const response = await apiClient.post<ApiResponse<VotingPlanPayload>>('/api/voting-plan', {
+        registration_status: selections.registration,
+        location_context: selections.location,
+        planning_focus: selections.focus,
+        language: 'en',
       });
 
-      if (response.data?.data?.reply) {
-        setGeneratedPlan(response.data.data.reply);
-      }
-    } catch (err: any) {
+      setGeneratedPlan(response.data.data.plan_markdown);
+      setSources(response.data.data.sources ?? []);
+    } catch {
       setError('Failed to generate your plan. Please try again.');
     } finally {
       setIsGenerating(false);
@@ -105,22 +129,21 @@ export default function VotingPlanPage() {
 
   const resetWizard = () => {
     setSelections({});
-    setCurrentStepIdx(0);
+    setCurrentStepIndex(0);
     setGeneratedPlan(null);
+    setSources([]);
     setError(null);
   };
 
   return (
     <main className="min-h-screen bg-void pt-20 pb-20 px-6 overflow-x-hidden">
-      <SEO 
-        title="My Voting Plan"
-        description="Create a personalized, AI-generated voting roadmap in 3 simple steps. Never miss a deadline or registration requirement again."
+      <SEO
+        title="Voting Plan"
+        description="Create a personalised Indian election voting checklist with booth checks, document preparation, and polling-day guidance."
         path="/voting-plan"
       />
 
       <div className="max-w-3xl mx-auto">
-        
-        {/* Header */}
         <header className="text-center mb-12 no-print">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -128,18 +151,17 @@ export default function VotingPlanPage() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold text-[10px] font-bold uppercase tracking-widest mb-4"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-            Voter Roadmap Generator
+            Voting Preparation Flow
           </motion.div>
           <h1 className="text-3xl sm:text-4xl font-display font-bold text-white mb-4">
-            Build Your <span className="text-gold">Voting Plan</span>
+            Build Your <span className="text-gold">Polling-Day Plan</span>
           </h1>
           <p className="text-text-secondary max-w-md mx-auto text-sm sm:text-base leading-relaxed">
-            Answer 3 quick questions to receive a personalized, AI-verified checklist for the upcoming election.
+            Answer three short questions and generate a practical, India-focused election checklist with official verification points.
           </p>
         </header>
 
-        {/* Wizard / Results Area */}
-        <div className="relative min-h-[400px]">
+        <div className="relative min-h-[420px]">
           <AnimatePresence mode="wait">
             {isGenerating ? (
               <motion.div
@@ -150,8 +172,8 @@ export default function VotingPlanPage() {
                 className="flex flex-col items-center justify-center py-20"
               >
                 <div className="w-12 h-12 border-4 border-gold border-t-transparent rounded-full animate-spin mb-6" />
-                <p className="text-gold font-bold uppercase tracking-widest animate-pulse">Consulting Gemini AI...</p>
-                <p className="text-text-secondary text-xs mt-2">Crafting your personalized checklist</p>
+                <p className="text-gold font-bold uppercase tracking-widest animate-pulse">Generating your plan...</p>
+                <p className="text-text-secondary text-xs mt-2">Combining your context with official election guidance</p>
               </motion.div>
             ) : generatedPlan ? (
               <motion.div
@@ -168,9 +190,9 @@ export default function VotingPlanPage() {
                         <path d="M22 4L12 14.01l-3-3" />
                       </svg>
                     </div>
-                    <h2 className="text-xl font-bold text-white">Your Personalized Roadmap</h2>
+                    <h2 className="text-xl font-bold text-white">Your Personal Checklist</h2>
                   </div>
-                  <button 
+                  <button
                     onClick={() => window.print()}
                     className="text-xs text-text-secondary hover:text-gold transition-colors flex items-center gap-1.5 font-bold uppercase tracking-widest no-print"
                   >
@@ -187,13 +209,32 @@ export default function VotingPlanPage() {
                   <ReactMarkdown>{generatedPlan}</ReactMarkdown>
                 </div>
 
+                {sources.length > 0 ? (
+                  <div className="mt-8 pt-6 border-t border-border/40">
+                    <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-widest">Official Verification Links</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {sources.map((source) => (
+                        <a
+                          key={source.url}
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2 rounded-full border border-gold/20 bg-gold/5 text-gold text-xs hover:bg-gold/10 transition-colors"
+                        >
+                          {source.title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="mt-10 pt-8 border-t border-border/40 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                   <p className="text-[10px] text-text-secondary/60 uppercase tracking-wider italic">
-                     * This plan is AI-generated. Always double-check with official sources.
-                   </p>
-                   <GoldButton variant="outline" size="sm" onClick={resetWizard} className="no-print">
-                     Start Over
-                   </GoldButton>
+                  <p className="text-[10px] text-text-secondary/60 uppercase tracking-wider italic">
+                    Always verify live dates and booth assignments through official ECI channels.
+                  </p>
+                  <GoldButton variant="outline" size="sm" onClick={resetWizard} className="no-print">
+                    Start Over
+                  </GoldButton>
                 </div>
               </motion.div>
             ) : (
@@ -205,98 +246,54 @@ export default function VotingPlanPage() {
                 transition={{ duration: 0.3 }}
                 className="bg-abyss/40 border border-border/40 rounded-3xl p-6 sm:p-10 shadow-xl"
               >
-                {/* Step indicator */}
                 <div className="flex gap-2 mb-8">
-                  {WIZARD_STEPS.map((s, idx) => (
-                    <div 
-                      key={s.id} 
+                  {WIZARD_STEPS.map((step, index) => (
+                    <div
+                      key={step.id}
                       className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
-                        idx <= currentStepIdx ? 'bg-gold' : 'bg-white/5'
+                        index <= currentStepIndex ? 'bg-gold' : 'bg-white/5'
                       }`}
                     />
                   ))}
                 </div>
 
                 <span className="text-[10px] text-gold font-bold uppercase tracking-[0.3em] mb-2 block">
-                  Step {currentStepIdx + 1} of {WIZARD_STEPS.length}
+                  Step {String(currentStepIndex + 1).padStart(2, '0')}
                 </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-8">{currentStep.question}</h2>
+                <h2 className="text-2xl sm:text-3xl text-white font-display mb-3">{currentStep.question}</h2>
+                <p className="text-text-secondary text-sm mb-8 max-w-xl">
+                  The assistant uses your answers to prioritise the most useful official checks and election steps.
+                </p>
 
-                <div className="grid gap-4">
+                <div className="space-y-4">
                   {currentStep.options.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => handleSelect(option.value)}
-                      className={`group text-left p-5 rounded-2xl border transition-all duration-300 ${
-                        selections[currentStep.id] === option.value
-                          ? 'bg-gold/10 border-gold shadow-[0_0_20px_rgba(212,160,23,0.15)]'
-                          : 'bg-void/50 border-border/40 hover:border-gold/40 hover:bg-void'
-                      }`}
+                      className="w-full text-left p-5 rounded-2xl border border-border/40 bg-surface/40 hover:border-gold/40 hover:bg-gold/5 transition-all group"
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`text-sm sm:text-base font-bold transition-colors ${
-                          selections[currentStep.id] === option.value ? 'text-gold' : 'text-white'
-                        }`}>
-                          {option.label}
-                        </span>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                          selections[currentStep.id] === option.value 
-                            ? 'border-gold bg-gold' 
-                            : 'border-border/40 group-hover:border-gold/40'
-                        }`}>
-                          {selections[currentStep.id] === option.value && (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="4">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-white font-semibold mb-2 group-hover:text-gold transition-colors">{option.label}</h3>
+                          <p className="text-sm text-text-secondary leading-relaxed">{option.description}</p>
                         </div>
+                        <span className="text-gold opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                       </div>
-                      <p className="text-xs text-text-secondary leading-relaxed opacity-80">
-                        {option.description}
-                      </p>
                     </button>
                   ))}
                 </div>
 
-                <div className="mt-10 flex items-center justify-between">
-                  <button
-                    onClick={() => setCurrentStepIdx(prev => Math.max(0, prev - 1))}
-                    disabled={currentStepIdx === 0}
-                    className={`text-xs font-bold uppercase tracking-widest transition-opacity ${
-                      currentStepIdx === 0 ? 'opacity-0 pointer-events-none' : 'text-text-secondary hover:text-white'
-                    }`}
-                  >
-                    ← Back
-                  </button>
-                  
-                  {isLastStep && selections[currentStep.id] && (
-                    <GoldButton 
-                      onClick={generatePlan}
-                      className="px-8 shadow-gold-glow"
-                    >
-                      Generate My Plan →
-                    </GoldButton>
-                  )}
-                </div>
+                {error ? <p className="mt-6 text-sm text-danger">{error}</p> : null}
+
+                {isLastStep && selections.registration && selections.location ? (
+                  <div className="mt-8 pt-6 border-t border-border/30 flex justify-end">
+                    <GoldButton onClick={generatePlan}>Generate My Plan</GoldButton>
+                  </div>
+                ) : null}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
-        {/* Error State */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-6 p-4 bg-danger/10 border border-danger/20 rounded-xl text-center text-danger text-xs font-medium"
-            >
-              ⚠️ {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
       </div>
     </main>
   );

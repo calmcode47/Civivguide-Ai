@@ -5,7 +5,7 @@ from typing import Dict, Tuple
 
 from google.cloud import translate_v2 as translate_v2
 
-from app.models.schemas import TranslateResponse
+from app.models.schemas import TranslatePayload
 
 SUPPORTED_LANGUAGES: Dict[str, str] = {
     "en": "English",
@@ -17,7 +17,7 @@ SUPPORTED_LANGUAGES: Dict[str, str] = {
 }
 
 _client: translate_v2.Client | None = None
-_cache: Dict[Tuple[str, str], TranslateResponse] = {}
+_cache: Dict[Tuple[str, str], TranslatePayload] = {}
 
 
 def _get_client() -> translate_v2.Client:
@@ -27,7 +27,7 @@ def _get_client() -> translate_v2.Client:
     return _client
 
 
-async def translate_text(text: str, target_language: str) -> TranslateResponse:
+async def translate_text(text: str, target_language: str) -> TranslatePayload:
     if target_language not in SUPPORTED_LANGUAGES:
         raise ValueError(f"Unsupported language: {target_language}")
 
@@ -37,7 +37,7 @@ async def translate_text(text: str, target_language: str) -> TranslateResponse:
 
     client = _get_client()
 
-    def _sync_translate() -> TranslateResponse:
+    def _sync_translate() -> TranslatePayload:
         result = client.translate(text, target_language=target_language)
         translated = result.get("translatedText", "")
         detected = (
@@ -45,7 +45,7 @@ async def translate_text(text: str, target_language: str) -> TranslateResponse:
             or result.get("sourceLanguage", "")
             or "unknown"
         )
-        return TranslateResponse(
+        return TranslatePayload(
             translated_text=translated,
             detected_source=detected,
         )
@@ -53,4 +53,3 @@ async def translate_text(text: str, target_language: str) -> TranslateResponse:
     response = await asyncio.to_thread(_sync_translate)
     _cache[key] = response
     return response
-

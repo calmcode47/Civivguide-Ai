@@ -1,19 +1,15 @@
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import SEO from '@/components/SEO';
-import { GoldButton } from '@/components/ui';
 import apiClient from '@/lib/apiClient';
-
-// =============================================================================
-// Constants & Types
-// =============================================================================
+import type { ApiResponse, OfficialResource } from '@/types';
 
 interface BallotTerm {
   term: string;
   context: string;
-  category: 'legal' | 'position' | 'procedure';
+  category: 'legal' | 'position' | 'procedure' | 'technology' | 'voter-aid';
 }
-
 
 interface BallotSection {
   title: string;
@@ -24,76 +20,105 @@ interface BallotSection {
   }[];
 }
 
+interface BallotDecodePayload {
+  explanation: string;
+  related_terms: string[];
+  sources: OfficialResource[];
+}
+
 const SAMPLE_BALLOT_SECTIONS: BallotSection[] = [
   {
-    title: 'Executive Branch',
+    title: 'Candidate Panel',
     items: [
-      { 
-        label: 'President of the United States', 
-        description: 'The highest executive officer of the nation.',
-        terms: [{ term: 'Incumbent', category: 'position', context: 'The current holder of an office or post.' }] 
+      {
+        label: 'Lok Sabha Candidate Listing',
+        description: 'The EVM line or candidate panel shows the candidate name, party, and election symbol.',
+        terms: [
+          {
+            term: 'Constituency',
+            category: 'position',
+            context: 'The geographic area represented by one elected member.',
+          },
+          {
+            term: 'Candidate Symbol',
+            category: 'voter-aid',
+            context: 'The visual mark associated with a party or independent candidate on the voting machine.',
+          },
+        ],
       },
-    ]
+    ],
   },
   {
-    title: 'State Propositions',
+    title: 'Voting Technology',
     items: [
-      { 
-        label: 'Proposition 1A: Climate Resilience Bond', 
-        description: 'Shall the state sell $10 billion in bonds for environmental protection?',
+      {
+        label: 'EVM and VVPAT',
+        description: 'Indian elections use the Electronic Voting Machine along with a VVPAT verification display.',
         terms: [
-          { term: 'Bond Measure', category: 'legal', context: 'A request by a government to borrow money for specific projects.' },
-          { term: 'Referendum', category: 'procedure', context: 'A direct vote by the electorate on a specific proposal.' }
-        ] 
+          {
+            term: 'EVM',
+            category: 'technology',
+            context: 'The Electronic Voting Machine used to record votes at the polling station.',
+          },
+          {
+            term: 'VVPAT',
+            category: 'technology',
+            context: 'The Voter Verifiable Paper Audit Trail that briefly shows the chosen candidate symbol and name.',
+          },
+        ],
       },
-    ]
+    ],
   },
   {
-    title: 'Local Measures',
+    title: 'Voter Choice and Transparency',
     items: [
-      { 
-        label: 'Measure B: Zoning Amendment', 
-        description: 'To allow for high-density housing near transit hubs.',
+      {
+        label: 'Candidate Information and NOTA',
+        description: 'Voters may review public candidate information and can also choose NOTA if they do not want to vote for any listed candidate.',
         terms: [
-          { term: 'Amendment', category: 'legal', context: 'A formal change or addition to a legal document or constitution.' },
-          { term: 'Zoning', category: 'procedure', context: 'Municipal laws that control how land can be used.' }
-        ] 
+          {
+            term: 'NOTA',
+            category: 'procedure',
+            context: 'The None of the Above option available to a voter on the voting machine.',
+          },
+          {
+            term: 'Affidavit',
+            category: 'legal',
+            context: 'The declaration submitted by a candidate covering details such as assets, liabilities, and criminal cases if any.',
+          },
+        ],
       },
-    ]
-  }
+    ],
+  },
 ];
-
-// =============================================================================
-// BallotDecoderPage
-// =============================================================================
 
 export default function BallotDecoderPage() {
   const [selectedTerm, setSelectedTerm] = useState<BallotTerm | null>(null);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [relatedTerms, setRelatedTerms] = useState<string[]>([]);
+  const [sources, setSources] = useState<OfficialResource[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchAiExplanation = useCallback(async (term: BallotTerm) => {
     setSelectedTerm(term);
     setIsLoading(true);
     setAiExplanation(null);
+    setRelatedTerms([]);
+    setSources([]);
 
     try {
-      const prompt = `Explain the term "${term.term}" in the context of a voting ballot. 
-      The simple definition is: "${term.context}". 
-      Provide a "Plain English" explanation in 2-3 sentences. 
-      Include a "Why it matters" tip. Format with markdown bolding for key points.`;
-
-      const response = await apiClient.post('/api/chat', {
-        message: prompt,
-        session_id: `decoder_${Date.now()}`,
-        user_context: 'First-Time Voter'
+      const response = await apiClient.post<ApiResponse<BallotDecodePayload>>('/api/ballot/decode', {
+        term: term.term,
+        context: term.context,
+        category: term.category,
+        language: 'en',
       });
 
-      if (response.data?.data?.reply) {
-        setAiExplanation(response.data.data.reply);
-      }
-    } catch (err) {
-      setAiExplanation("Sorry, I couldn't fetch an explanation right now. " + term.context);
+      setAiExplanation(response.data.data.explanation);
+      setRelatedTerms(response.data.data.related_terms ?? []);
+      setSources(response.data.data.sources ?? []);
+    } catch {
+      setAiExplanation(`**${term.term}**: ${term.context}`);
     } finally {
       setIsLoading(false);
     }
@@ -101,67 +126,62 @@ export default function BallotDecoderPage() {
 
   return (
     <main className="min-h-screen bg-void pt-24 pb-20 px-6">
-      <SEO 
+      <SEO
         title="Ballot Decoder"
-        description="Demystify your ballot with the interactive Ballot Decoder. Understand complex legal terms like 'Bond Measure', 'Referendum', and 'Incumbent' with AI-powered simplicity."
+        description="Decode Indian election terms like EVM, VVPAT, constituency, candidate symbol, affidavit, and NOTA in simple language."
         path="/ballot-decoder"
       />
 
       <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-start">
-        
-        {/* Left: The Ballot Visualization */}
         <section className="order-2 lg:order-1">
           <header className="mb-8">
-             <h1 className="text-3xl font-display font-bold text-white mb-2">The Interactive <span className="text-gold">Ballot</span></h1>
-             <p className="text-text-secondary text-sm">Click on underlined terms to decode their meaning.</p>
+            <h1 className="text-3xl font-display font-bold text-white mb-2">
+              The Interactive <span className="text-gold">Ballot Guide</span>
+            </h1>
+            <p className="text-text-secondary text-sm">Click any highlighted election term to decode it in plain language.</p>
           </header>
 
-          <div className="bg-[#fdfcf0] rounded-sm shadow-2xl p-8 sm:p-12 text-void relative overflow-hidden">
-            {/* Ballot Watermark */}
+          <div className="bg-[#f6f1dc] rounded-sm shadow-2xl p-8 sm:p-12 text-void relative overflow-hidden">
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none flex items-center justify-center rotate-[-15deg]">
-              <span className="text-9xl font-bold uppercase tracking-[1em]">OFFICIAL BALLOT</span>
+              <span className="text-8xl font-bold uppercase tracking-[0.8em]">ELECTION GUIDE</span>
             </div>
 
             <div className="relative z-10 border-[3px] border-void p-6 sm:p-8">
               <header className="border-b-4 border-void pb-4 mb-8 text-center">
                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter mb-4">
-                  <span>General Election</span>
-                  <span>November 2026</span>
+                  <span>India Election Flow</span>
+                  <span>Voter Help View</span>
                 </div>
-                <h2 className="text-2xl font-black uppercase tracking-widest leading-none">Official Sample Ballot</h2>
-                <p className="text-[10px] font-bold mt-2">State of California | County of CivicGuide</p>
+                <h2 className="text-2xl font-black uppercase tracking-widest leading-none">Sample Candidate and Booth Terms</h2>
+                <p className="text-[10px] font-bold mt-2">Plain-language guide for EVM, VVPAT, candidate symbols, and voter options</p>
               </header>
 
-              {SAMPLE_BALLOT_SECTIONS.map((section, sIdx) => (
+              {SAMPLE_BALLOT_SECTIONS.map((section, sectionIndex) => (
                 <div key={section.title} className="mb-10">
-                  <h3 className="bg-void text-[#fdfcf0] text-xs font-black uppercase px-2 py-1 mb-6 tracking-widest inline-block">
+                  <h3 className="bg-void text-[#f6f1dc] text-xs font-black uppercase px-2 py-1 mb-6 tracking-widest inline-block">
                     {section.title}
                   </h3>
-                  
+
                   {section.items.map((item) => (
                     <div key={item.label} className="mb-8 group">
                       <div className="flex items-start gap-4 mb-2">
                         <div className="w-5 h-5 border-2 border-void flex-shrink-0 mt-1" />
                         <div>
                           <h4 className="text-base font-black uppercase leading-tight mb-1">{item.label}</h4>
-                          <p className="text-xs font-medium leading-relaxed opacity-80 mb-3">
-                            {item.description}
-                          </p>
-                          
-                          {/* Decorated Terms */}
+                          <p className="text-xs font-medium leading-relaxed opacity-80 mb-3">{item.description}</p>
                           <div className="flex flex-wrap gap-2">
-                            {item.terms.map(t => (
+                            {item.terms.map((term) => (
                               <button
-                                key={t.term}
-                                onClick={() => fetchAiExplanation(t)}
-                                aria-label={`Explain the term: ${t.term}`}
+                                key={term.term}
+                                onClick={() => fetchAiExplanation(term)}
+                                aria-label={`Explain the term ${term.term}`}
                                 className={`text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${
-                                  selectedTerm?.term === t.term 
-                                    ? 'border-gold text-gold scale-105' 
+                                  selectedTerm?.term === term.term
+                                    ? 'border-gold text-gold scale-105'
                                     : 'border-void/20 hover:border-void'
                                 }`}
                               >
-                                ? {t.term}
+                                {term.term}
                               </button>
                             ))}
                           </div>
@@ -169,18 +189,18 @@ export default function BallotDecoderPage() {
                       </div>
                     </div>
                   ))}
-                  {sIdx < SAMPLE_BALLOT_SECTIONS.length - 1 && <div className="border-t border-void/10 my-8" />}
+
+                  {sectionIndex < SAMPLE_BALLOT_SECTIONS.length - 1 ? <div className="border-t border-void/10 my-8" /> : null}
                 </div>
               ))}
 
               <footer className="mt-12 pt-6 border-t-2 border-void text-[9px] font-bold text-center uppercase tracking-widest">
-                End of Sample Ballot Sections
+                End of guided sample terms
               </footer>
             </div>
           </div>
         </section>
 
-        {/* Right: The AI Decoder Panel */}
         <aside className="order-1 lg:order-2 lg:sticky lg:top-28">
           <div className="bg-abyss/40 border border-border/40 rounded-3xl p-8 backdrop-blur-md shadow-xl">
             <AnimatePresence mode="wait">
@@ -200,7 +220,7 @@ export default function BallotDecoderPage() {
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">Term Decoder</h3>
                   <p className="text-text-secondary text-sm max-w-xs mx-auto leading-relaxed">
-                    Ever felt confused by legal jargon on a ballot? Select any term on the left to get a simple, AI-powered explanation.
+                    Select any election term to get a voter-friendly explanation and understand why it matters.
                   </p>
                 </motion.div>
               ) : (
@@ -212,51 +232,64 @@ export default function BallotDecoderPage() {
                 >
                   <header>
                     <div className="flex items-center gap-2 mb-2">
-                       <span className="px-2 py-0.5 rounded-md bg-gold/10 border border-gold/20 text-[10px] font-bold text-gold uppercase tracking-widest">
-                         {selectedTerm.category}
-                       </span>
-                       <span className="w-1 h-1 rounded-full bg-border" />
-                       <span className="text-[10px] text-text-secondary uppercase tracking-widest">Civic Dictionary</span>
+                      <span className="px-2 py-0.5 rounded-md bg-gold/10 border border-gold/20 text-[10px] font-bold text-gold uppercase tracking-widest">
+                        {selectedTerm.category}
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-border" />
+                      <span className="text-[10px] text-text-secondary uppercase tracking-widest">Election glossary</span>
                     </div>
-                    <h3 className="text-3xl font-display font-bold text-white">{selectedTerm.term}</h3>
+                    <h2 className="text-2xl font-display text-white">{selectedTerm.term}</h2>
                   </header>
 
-                  <div className="bg-void/50 rounded-2xl p-6 border border-border/20 min-h-[160px] flex flex-col justify-center">
+                  <div className="rounded-2xl border border-border/40 bg-void/60 p-5 min-h-[180px]">
                     {isLoading ? (
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-                        <p className="text-gold text-[10px] font-bold uppercase tracking-[0.2em] animate-pulse">Decoding Jargon...</p>
+                      <div className="flex items-center gap-3 text-text-secondary text-sm">
+                        <div className="w-5 h-5 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+                        Generating a simpler explanation...
                       </div>
-                    ) : (
-                      <div className="prose prose-invert prose-sm">
-                        <p className="text-text-primary leading-relaxed text-base italic mb-4">
-                          "{selectedTerm.context}"
-                        </p>
-                        <div className="bg-gold/5 rounded-xl p-4 border border-gold/10 text-text-secondary text-sm leading-relaxed">
-                          {aiExplanation}
-                        </div>
+                    ) : aiExplanation ? (
+                      <div className="prose prose-invert prose-gold max-w-none prose-sm">
+                        <ReactMarkdown>{aiExplanation}</ReactMarkdown>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
-                  <div className="pt-6">
-                    <GoldButton variant="outline" size="sm" onClick={() => setSelectedTerm(null)}>
-                      Clear Selection
-                    </GoldButton>
-                  </div>
+                  {relatedTerms.length > 0 ? (
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-3">Related Terms</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {relatedTerms.map((term) => (
+                          <span key={term} className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-text-secondary">
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {sources.length > 0 ? (
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-3">Official References</h3>
+                      <div className="flex flex-wrap gap-3">
+                        {sources.map((source) => (
+                          <a
+                            key={source.url}
+                            href={source.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-4 py-2 rounded-full border border-gold/20 bg-gold/5 text-gold text-xs hover:bg-gold/10 transition-colors"
+                          >
+                            {source.title}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-
-          <div className="mt-8 p-6 rounded-2xl bg-gold-gradient text-void shadow-gold-glow">
-             <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">💡 Pro-Tip</h4>
-             <p className="text-xs font-medium leading-relaxed opacity-90">
-               "Bond Measures" usually require a higher threshold of votes (like 55% or 2/3) to pass compared to normal laws. Always check the required percentage!
-             </p>
-          </div>
         </aside>
-
       </div>
     </main>
   );

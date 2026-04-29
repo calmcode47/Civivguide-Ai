@@ -1,158 +1,163 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import { GoldButton } from '@/components/ui';
-
-// =============================================================================
-// Constants & Types
-// =============================================================================
 
 interface Milestone {
   id: string;
   label: string;
-  status: 'completed' | 'active' | 'upcoming';
-  progress: number; // 0 to 100
-  date: string;
+  window: string;
   description: string;
+  status: 'prepare' | 'watch' | 'act';
   icon: string;
 }
 
 const ELECTION_MILESTONES: Milestone[] = [
   {
-    id: 'registration',
-    label: 'Voter Registration',
-    status: 'completed',
-    progress: 100,
-    date: 'Oct 15, 2026',
-    description: 'The final window for online registration has closed.',
-    icon: '📝',
+    id: 'roll',
+    label: 'Check Electoral Roll',
+    window: 'Before the schedule is announced',
+    description: 'Verify your name, address, and voter details well before the election cycle becomes busy.',
+    status: 'prepare',
+    icon: '01',
   },
   {
-    id: 'mail_in',
-    label: 'Mail-in Voting',
-    status: 'active',
-    progress: 65,
-    date: 'Starts in 4 Days',
-    description: 'Ballots are being mailed to all registered voters.',
-    icon: '✉️',
+    id: 'notification',
+    label: 'Track the Official Notification',
+    window: 'When ECI releases the schedule',
+    description: 'Once the schedule is published, official deadlines and the Model Code of Conduct take effect.',
+    status: 'watch',
+    icon: '02',
   },
   {
-    id: 'early_voting',
-    label: 'Early Voting Sites',
-    status: 'upcoming',
-    progress: 0,
-    date: 'Nov 01, 2026',
-    description: 'Find your nearest early voting center.',
-    icon: '🏛️',
+    id: 'campaign',
+    label: 'Watch the Campaign and Silence Window',
+    window: 'Leading up to polling day',
+    description: 'Keep an eye on candidate information and remember that active campaigning stops during the silence period.',
+    status: 'watch',
+    icon: '03',
   },
   {
-    id: 'election_day',
-    label: 'General Election Day',
-    status: 'upcoming',
-    progress: 0,
-    date: 'Nov 03, 2026',
-    description: 'The final day to cast your ballot in person.',
-    icon: '🗳️',
+    id: 'polling',
+    label: 'Prepare for Polling Day',
+    window: 'Your chosen polling date',
+    description: 'Confirm your booth, ID proof, travel time, and any assistance arrangements before you leave home.',
+    status: 'act',
+    icon: '04',
+  },
+  {
+    id: 'counting',
+    label: 'Follow Counting and Results',
+    window: 'After polling concludes',
+    description: 'Use official ECI channels for counting updates, result declaration, and post-result constitutional steps.',
+    status: 'watch',
+    icon: '05',
   },
 ];
 
-// =============================================================================
-// MilestonesPage
-// =============================================================================
+function formatDate(date: Date) {
+  return `${date.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })} • ${date.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
+}
 
 export default function MilestonesPage() {
-  // 1. Target Date State (Default: Nov 3, 2026, 20:00:00)
-  const [targetDate, setTargetDate] = useState(() => {
-    try {
-      const saved = localStorage.getItem('election_target_date');
-      if (saved) {
-        const d = new Date(saved);
-        if (!isNaN(d.getTime())) return d;
-      }
-    } catch (e) {
-      console.error('Failed to parse saved date', e);
-    }
-    return new Date('2026-11-03T20:00:00');
+  const [targetDate, setTargetDate] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('civicmind_target_date');
+    if (!saved) return null;
+    const parsed = new Date(saved);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   });
-
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Safely initialize form strings using LOCAL time (not UTC)
-  const getInitialForm = (date: Date) => {
-    try {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
-      return {
-        date: `${year}-${month}-${day}`,
-        time: `${hours}:${minutes}`
-      };
-    } catch {
-      return { date: '2026-11-03', time: '20:00' };
-    }
-  };
-
-  const [editForm, setEditForm] = useState(() => getInitialForm(targetDate));
-
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('08:00');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [formError, setFormError] = useState<string | null>(null);
 
-  // Update countdown logic to use targetDate
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const difference = targetDate.getTime() - now.getTime();
-      
-      if (difference > 0) {
-        setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
-        });
-      } else {
+    if (!targetDate) {
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
+
+    const updateCountdown = () => {
+      const difference = targetDate.getTime() - Date.now();
+      if (difference <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
       }
+
+      setTimeLeft({
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / (1000 * 60)) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      });
     };
 
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-    return () => clearInterval(timer);
+    updateCountdown();
+    const timer = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(timer);
   }, [targetDate]);
 
-  const handleSaveDate = () => {
-    try {
-      const [year, month, day] = editForm.date.split('-').map(Number);
-      const [hour, minute] = editForm.time.split(':').map(Number);
-      
-      const newDate = new Date(year, month - 1, day, hour, minute, 0);
-      
-      if (!isNaN(newDate.getTime())) {
-        setTargetDate(newDate);
-        localStorage.setItem('election_target_date', newDate.toISOString());
-        setIsEditing(false);
-      } else {
-        alert('Please enter a valid date and time.');
-      }
-    } catch (err) {
-      console.error('Error saving date:', err);
-      alert('Failed to save date. Please check your inputs.');
+  const progress = useMemo(() => {
+    if (!targetDate) return 35;
+    return timeLeft.days > 30 ? 55 : timeLeft.days > 7 ? 78 : 92;
+  }, [targetDate, timeLeft.days]);
+
+  const openEditor = () => {
+    if (targetDate) {
+      const year = targetDate.getFullYear();
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const day = String(targetDate.getDate()).padStart(2, '0');
+      const hours = String(targetDate.getHours()).padStart(2, '0');
+      const minutes = String(targetDate.getMinutes()).padStart(2, '0');
+      setEditDate(`${year}-${month}-${day}`);
+      setEditTime(`${hours}:${minutes}`);
     }
+    setIsEditing(true);
+  };
+
+  const saveDate = () => {
+    setFormError(null);
+    if (!editDate) {
+      setFormError('Choose a date before saving.');
+      return;
+    }
+
+    const nextDate = new Date(`${editDate}T${editTime || '08:00'}`);
+    if (Number.isNaN(nextDate.getTime())) {
+      setFormError('Enter a valid date and time.');
+      return;
+    }
+
+    setTargetDate(nextDate);
+    localStorage.setItem('civicmind_target_date', nextDate.toISOString());
+    setIsEditing(false);
+  };
+
+  const clearDate = () => {
+    setTargetDate(null);
+    localStorage.removeItem('civicmind_target_date');
+    setIsEditing(false);
+    setFormError(null);
   };
 
   return (
     <main className="min-h-screen bg-void pt-24 pb-20 px-6">
-      <SEO 
-        title="Election Milestones & Countdown"
-        description="Stay ahead of the curve with our live election cycle dashboard. Track registration deadlines, mail-in voting windows, and the final countdown to Election Day."
+      <SEO
+        title="Election Milestones"
+        description="Follow the major stages of an Indian election cycle and set your own polling-day countdown without assuming unofficial dates."
         path="/milestones"
       />
 
       <div className="max-w-6xl mx-auto">
-        
-        {/* Header Section */}
         <header className="mb-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
@@ -162,202 +167,154 @@ export default function MilestonesPage() {
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold text-[10px] font-bold uppercase tracking-widest mb-4"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-                Live Election Cycle Status
+                Election Readiness Dashboard
               </motion.div>
               <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2">
-                The Final <span className="text-gold">Countdown</span>
+                Key <span className="text-gold">Milestones</span>
               </h1>
-              <p className="text-text-secondary max-w-md">
-                Tracking every major milestone of the 2026 General Election. Stay informed, stay ready.
+              <p className="text-text-secondary max-w-xl">
+                This view does not assume live election dates. Use it as a stage-by-stage readiness guide, and add an official polling date only after it is announced by ECI.
               </p>
-              
-              <button 
-                onClick={() => {
-                  if (!isEditing) {
-                    setEditForm(getInitialForm(targetDate));
-                  }
-                  setIsEditing(!isEditing);
-                }}
-                className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                {isEditing ? 'Cancel Editing' : 'Customize Date'}
-              </button>
             </div>
 
-            {/* Global Progress */}
             <div className="bg-abyss/40 border border-border/40 rounded-2xl p-5 backdrop-blur-md min-w-[280px]">
-               <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-3">
-                 <span>Cycle Completion</span>
-                 <span className="text-gold">72%</span>
-               </div>
-               <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                 <motion.div 
-                   initial={{ width: 0 }}
-                   animate={{ width: '72%' }}
-                   transition={{ duration: 1, ease: 'easeOut' }}
-                   className="h-full bg-gold shadow-[0_0_10px_rgba(212,160,23,0.5)]" 
-                 />
-               </div>
-               <p className="text-[9px] text-text-secondary/60 mt-3 uppercase tracking-tighter">
-                 Current Phase: <span className="text-white">Active Balloting</span>
-               </p>
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-3">
+                <span>Readiness Score</span>
+                <span className="text-gold">{progress}%</span>
+              </div>
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  className="h-full bg-gold shadow-[0_0_10px_rgba(212,160,23,0.5)]"
+                />
+              </div>
+              <p className="text-[9px] text-text-secondary/60 mt-3 uppercase tracking-tighter">
+                Current focus: <span className="text-white">{targetDate ? 'Polling preparation' : 'Pre-announcement verification'}</span>
+              </p>
             </div>
           </div>
-
-          {/* Edit Panel */}
-          <AnimatePresence>
-            {isEditing && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="mt-8 overflow-hidden"
-              >
-                <div className="bg-void border border-gold/20 rounded-3xl p-6 flex flex-wrap items-end gap-6 shadow-2xl">
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-[10px] font-bold text-gold uppercase tracking-[0.2em] mb-2">Target Date</label>
-                    <input 
-                      type="date" 
-                      value={editForm.date}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                      className="w-full bg-abyss border border-border/40 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-[10px] font-bold text-gold uppercase tracking-[0.2em] mb-2">Target Time</label>
-                    <input 
-                      type="time" 
-                      value={editForm.time}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
-                      className="w-full bg-abyss border border-border/40 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors"
-                    />
-                  </div>
-                  <GoldButton onClick={handleSaveDate}>
-                    Apply Changes
-                  </GoldButton>
-                  <button 
-                    onClick={() => {
-                      const official = new Date('2026-11-03T20:00:00');
-                      setTargetDate(official);
-                      setEditForm(getInitialForm(official));
-                      localStorage.removeItem('election_target_date');
-                      setIsEditing(false);
-                    }}
-                    className="px-4 py-3 rounded-xl border border-white/10 text-[10px] font-bold text-text-secondary uppercase tracking-widest hover:text-white transition-all"
-                  >
-                    Reset to Official Date
-                  </button>
-                </div>
-                
-                {new Date(`${editForm.date}T${editForm.time}`).getTime() < new Date().getTime() && (
-                  <p className="mt-3 text-[10px] text-danger font-bold uppercase tracking-widest animate-pulse">
-                    ⚠️ Warning: The selected date is in the past. Countdown will show 0.
-                  </p>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </header>
 
-        {/* Big Countdown Timer */}
         <section className="mb-12">
           <div className="bg-void border border-gold/20 rounded-[2.5rem] p-10 sm:p-14 relative overflow-hidden shadow-2xl">
             <div className="absolute inset-0 bg-gold-gradient opacity-[0.03] pointer-events-none" />
-            
-            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {[
-                { label: 'Days', value: timeLeft.days },
-                { label: 'Hours', value: timeLeft.hours },
-                { label: 'Minutes', value: timeLeft.minutes },
-                { label: 'Seconds', value: timeLeft.seconds },
-              ].map((unit) => (
-                <div key={unit.label} className="flex flex-col items-center">
-                  <div className="text-5xl md:text-7xl font-display font-black text-white tabular-nums tracking-tighter mb-2">
-                    {String(unit.value).padStart(2, '0')}
-                  </div>
-                  <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-gold/60">
-                    {unit.label}
-                  </span>
+
+            {targetDate ? (
+              <>
+                <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                  {[
+                    { label: 'Days', value: timeLeft.days },
+                    { label: 'Hours', value: timeLeft.hours },
+                    { label: 'Minutes', value: timeLeft.minutes },
+                    { label: 'Seconds', value: timeLeft.seconds },
+                  ].map((unit) => (
+                    <div key={unit.label} className="flex flex-col items-center">
+                      <div className="text-5xl md:text-7xl font-display font-black text-white tabular-nums tracking-tighter mb-2">
+                        {String(unit.value).padStart(2, '0')}
+                      </div>
+                      <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-gold/60">
+                        {unit.label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            
-            <div className="mt-12 text-center">
-              <h3 className="text-lg font-bold text-white mb-2 uppercase tracking-widest">Until Polls Close</h3>
-              <p className="text-sm text-text-secondary">
-                {targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} • {targetDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-              </p>
+
+                <div className="mt-12 text-center">
+                  <h3 className="text-lg font-bold text-white mb-2 uppercase tracking-widest">Countdown to Your Official Polling Date</h3>
+                  <p className="text-sm text-text-secondary">{formatDate(targetDate)}</p>
+                </div>
+              </>
+            ) : (
+              <div className="relative z-10 max-w-2xl">
+                <h2 className="text-3xl font-display text-white mb-4">No official polling date saved yet</h2>
+                <p className="text-text-secondary leading-relaxed mb-6">
+                  Once your election schedule is officially announced, add the polling date here to turn this page into a personal countdown dashboard. Until then, the milestone cards below focus on preparation stages rather than assumed calendar dates.
+                </p>
+              </div>
+            )}
+
+            <div className="relative z-10 mt-8 flex flex-wrap gap-3">
+              <GoldButton onClick={openEditor}>{targetDate ? 'Edit Polling Date' : 'Add Polling Date'}</GoldButton>
+              {targetDate ? (
+                <GoldButton variant="outline" onClick={clearDate}>
+                  Clear Date
+                </GoldButton>
+              ) : null}
             </div>
           </div>
         </section>
 
-        {/* Milestones Grid */}
-        <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {ELECTION_MILESTONES.map((m, idx) => (
+        {isEditing ? (
+          <section className="mb-10">
+            <div className="bg-abyss/40 border border-border/40 rounded-3xl p-6 flex flex-wrap items-end gap-6 shadow-xl">
+              <div className="flex-1 min-w-[220px]">
+                <label className="block text-[10px] font-bold text-gold uppercase tracking-[0.2em] mb-2">Official Polling Date</label>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(event) => setEditDate(event.target.value)}
+                  className="w-full bg-void border border-border/40 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors"
+                />
+              </div>
+              <div className="flex-1 min-w-[220px]">
+                <label className="block text-[10px] font-bold text-gold uppercase tracking-[0.2em] mb-2">Time</label>
+                <input
+                  type="time"
+                  value={editTime}
+                  onChange={(event) => setEditTime(event.target.value)}
+                  className="w-full bg-void border border-border/40 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold transition-colors"
+                />
+              </div>
+              <GoldButton onClick={saveDate}>Save Date</GoldButton>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-3 rounded-xl border border-white/10 text-[10px] font-bold text-text-secondary uppercase tracking-widest hover:text-white transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+            {formError ? <p className="mt-3 text-sm text-danger">{formError}</p> : null}
+          </section>
+        ) : null}
+
+        <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {ELECTION_MILESTONES.map((milestone, index) => (
             <motion.div
-              key={m.id}
+              key={milestone.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
+              transition={{ delay: index * 0.08 }}
               className={`p-6 rounded-3xl border flex flex-col gap-5 h-full ${
-                m.status === 'active' 
-                  ? 'bg-gold/5 border-gold/30 ring-1 ring-gold/20 shadow-[0_10px_40px_rgba(212,160,23,0.1)]' 
+                milestone.status === 'act'
+                  ? 'bg-gold/5 border-gold/30 ring-1 ring-gold/20 shadow-[0_10px_40px_rgba(212,160,23,0.1)]'
                   : 'bg-abyss/40 border-border/40'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-2xl">{m.icon}</span>
-                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
-                  m.status === 'completed' ? 'bg-success/10 text-success' :
-                  m.status === 'active' ? 'bg-gold text-void' : 'bg-white/5 text-text-secondary'
-                }`}>
-                  {m.status}
+                <span className="text-2xl font-display text-gold">{milestone.icon}</span>
+                <span
+                  className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
+                    milestone.status === 'prepare'
+                      ? 'bg-white/5 text-text-secondary'
+                      : milestone.status === 'watch'
+                      ? 'bg-blue-500/10 text-blue-300'
+                      : 'bg-gold text-void'
+                  }`}
+                >
+                  {milestone.status}
                 </span>
               </div>
 
               <div>
-                <h4 className="font-bold text-white text-lg mb-1">{m.label}</h4>
-                <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
-                  {m.description}
-                </p>
-              </div>
-
-              <div className="mt-auto">
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-[10px] font-bold text-white uppercase tracking-wider">{m.date}</span>
-                  {m.status === 'active' && <span className="text-[10px] font-bold text-gold">{m.progress}%</span>}
-                </div>
-                {m.status === 'active' && (
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${m.progress}%` }}
-                      className="h-full bg-gold"
-                    />
-                  </div>
-                )}
+                <h2 className="text-xl font-bold text-white mb-2">{milestone.label}</h2>
+                <p className="text-[10px] uppercase tracking-widest text-gold/70 mb-3">{milestone.window}</p>
+                <p className="text-sm text-text-secondary leading-relaxed">{milestone.description}</p>
               </div>
             </motion.div>
           ))}
         </section>
-
-        {/* Footer CTA */}
-        <footer className="mt-16 text-center border-t border-border/40 pt-12">
-           <h3 className="text-xl font-bold text-white mb-4">Need help with your specific timeline?</h3>
-           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-             <GoldButton onClick={() => window.location.href='/assistant'}>
-               Ask the AI Assistant
-             </GoldButton>
-             <GoldButton variant="outline" onClick={() => window.location.href='/voting-plan'}>
-               Build My Plan
-             </GoldButton>
-           </div>
-        </footer>
-
       </div>
     </main>
   );

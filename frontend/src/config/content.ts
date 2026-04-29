@@ -1,20 +1,5 @@
-/**
- * CivicGuide AI — Content Configuration
- * This file contains all static text, feature descriptions, and step-by-step
- * guides used across the landing page and other static views.
- * 
- * CRITICAL: Zero mock data. These are permanent app descriptors.
- */
-
-// =============================================================================
-// Hero Section
-// =============================================================================
-
-export const HERO_SUBTITLE = "Ask anything about voter registration, election timelines, ballots, and the complete democratic process — powered by Google Gemini.";
-
-// =============================================================================
-// Features Section
-// =============================================================================
+export const HERO_SUBTITLE =
+  'Ask practical questions about voter enrolment, EVM and VVPAT, polling-day preparation, nomination stages, and counting workflows with Google Gemini-backed guidance.';
 
 export interface FeatureCard {
   icon: string;
@@ -23,41 +8,37 @@ export interface FeatureCard {
 }
 
 export const FEATURE_CARDS: FeatureCard[] = [
-  { 
-    icon: "🗳️", 
-    title: "Voter Registration Guide", 
-    description: "Step-by-step walkthrough of how to register, eligibility requirements, and deadlines." 
+  {
+    icon: '🧾',
+    title: 'Voter Enrolment Clarity',
+    description: 'Understand new registration, corrections, address transfer, and electoral roll checks without legal jargon.',
   },
-  { 
-    icon: "📅", 
-    title: "Election Timelines", 
-    description: "Visual breakdown of primary, general, and runoff election schedules and key dates." 
+  {
+    icon: '🗓️',
+    title: 'Election Timeline Map',
+    description: 'Follow the full India election cycle from schedule announcement to counting and government formation.',
   },
-  { 
-    icon: "🤖", 
-    title: "AI-Powered Answers", 
-    description: "Ask any election question in plain language and receive accurate, sourced answers instantly." 
+  {
+    icon: '🤖',
+    title: 'Context-Aware Assistant',
+    description: 'Switch between first-time voter, returning voter, candidate, and observer contexts for more relevant answers.',
   },
-  { 
-    icon: "📋", 
-    title: "Ballot Explained", 
-    description: "Understand what's on your ballot — measures, candidates, and how voting works." 
+  {
+    icon: '🧠',
+    title: 'EVM and Ballot Decoder',
+    description: 'Decode terms like constituency, candidate symbol, NOTA, affidavit, EVM, and VVPAT in plain language.',
   },
-  { 
-    icon: "🏛️", 
-    title: "Election Officials", 
-    description: "Learn about the roles of election commissions, poll workers, and oversight bodies." 
+  {
+    icon: '✅',
+    title: 'Polling-Day Planning',
+    description: 'Generate a practical checklist for documents, booth verification, travel timing, and official last-mile checks.',
   },
-  { 
-    icon: "✅", 
-    title: "Post-Election Process", 
-    description: "Understand vote counting, result certification, audits, and the transition of power." 
-  }
+  {
+    icon: '🏛️',
+    title: 'Official-Source First',
+    description: 'The assistant avoids inventing dates and pushes users back to official ECI resources whenever live verification matters.',
+  },
 ];
-
-// =============================================================================
-// How It Works Section
-// =============================================================================
 
 export interface HowItWorksStep {
   step: string;
@@ -66,19 +47,19 @@ export interface HowItWorksStep {
 }
 
 export const HOW_IT_WORKS: HowItWorksStep[] = [
-  { 
-    step: "01", 
-    title: "Ask Your Question", 
-    description: "Type any election-related question in plain language" 
+  {
+    step: '01',
+    title: 'Choose Your Context',
+    description: 'Start as a first-time voter, returning voter, candidate, or observer so the assistant can respond more intelligently.',
   },
-  { 
-    step: "02", 
-    title: "AI Understands Context", 
-    description: "Gemini analyzes your question and retrieves relevant election information" 
+  {
+    step: '02',
+    title: 'Ask a Real Election Question',
+    description: 'Query the process in plain language, whether you need enrolment help, polling guidance, or election-stage clarity.',
   },
-  { 
-    step: "03", 
-    title: "Get Clear Answers", 
-    description: "Receive sourced, accurate explanations with follow-up suggestions" 
-  }
+  {
+    step: '03',
+    title: 'Get Actionable Steps',
+    description: 'Receive concise, non-partisan answers with follow-up prompts and official verification links when the issue is time-sensitive.',
+  },
 ];

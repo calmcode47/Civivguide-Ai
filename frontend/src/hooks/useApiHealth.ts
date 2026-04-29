@@ -1,36 +1,40 @@
-/**
- * Polls the backend health endpoint on mount.
- * Used to show a degraded-mode warning if the backend is unreachable.
- */
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import apiClient from '../lib/apiClient';
-import { AxiosResponse } from 'axios';
+import type { ApiResponse, BackendHealthPayload } from '@/types';
 
 interface BackendHealth {
   isReachable: boolean;
-  ragReady: boolean;
+  geminiReady: boolean;
+  firestoreMode: 'firestore' | 'memory';
   isChecking: boolean;
 }
 
 export function useApiHealth(): BackendHealth {
   const [state, setState] = useState<BackendHealth>({
     isReachable: true,
-    ragReady: false,
+    geminiReady: false,
+    firestoreMode: 'memory',
     isChecking: true,
   });
 
   useEffect(() => {
     apiClient
-      .get('/api/health')
-      .then((res: AxiosResponse) => {
+      .get<ApiResponse<BackendHealthPayload>>('/api/health')
+      .then((response) => {
         setState({
-          isReachable: true,
-          ragReady: res.data?.data?.rag_ready ?? false,
+          isReachable: response.data.data.backend_ready,
+          geminiReady: response.data.data.gemini_ready,
+          firestoreMode: response.data.data.firestore_mode,
           isChecking: false,
         });
       })
       .catch(() => {
-        setState({ isReachable: false, ragReady: false, isChecking: false });
+        setState({
+          isReachable: false,
+          geminiReady: false,
+          firestoreMode: 'memory',
+          isChecking: false,
+        });
       });
   }, []);
 

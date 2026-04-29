@@ -9,8 +9,8 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({ title, description, path, image }) => {
-  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://flowarena-694a7.web.app';
-  const fullTitle = `CivicGuide AI — ${title}`;
+  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://your-firebase-project.web.app';
+  const fullTitle = `CivicMind — ${title}`;
   const fullUrl = `${siteUrl}${path}`;
   const ogImage = image || `${siteUrl}/og-image.png`;
 

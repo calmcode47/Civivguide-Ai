@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
+import { initFirebaseAnalytics } from './lib/firebase';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -19,3 +20,5 @@ ReactDOM.createRoot(rootElement).render(
     </HelmetProvider>
   </React.StrictMode>
 );
+
+void initFirebaseAnalytics();

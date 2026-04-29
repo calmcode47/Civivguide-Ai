@@ -8,7 +8,7 @@ import LoadingDots from './LoadingDots';
 // =============================================================================
 
 function formatTime(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('en-IN', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
@@ -123,7 +123,7 @@ export default function ChatBubble({ message, onRetry }: ChatBubbleProps) {
   return (
     <motion.article
       role="article"
-      aria-label={`${isUser ? 'Your' : 'CivicGuide'} message`}
+      aria-label={`${isUser ? 'Your' : 'CivicMind'} message`}
       variants={variants}
       initial="initial"
       animate="animate"
@@ -132,14 +132,14 @@ export default function ChatBubble({ message, onRetry }: ChatBubbleProps) {
       {/* Speaker label */}
       <div style={labelStyle}>
         {!isUser && <StarIcon />}
-        <span>{isUser ? 'You' : 'CivicGuide'}</span>
+        <span>{isUser ? 'You' : 'CivicMind'}</span>
         {hasError && <span className="text-[10px] text-danger font-bold ml-1 uppercase tracking-tighter">Connection Error</span>}
       </div>
 
       {/* Bubble */}
       <div style={bubbleStyle} className="group relative">
         {message.isStreaming ? (
-          <LoadingDots aria-label="CivicGuide is typing" />
+          <LoadingDots aria-label="CivicMind is typing" />
         ) : isUser ? (
           <p style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {message.content}

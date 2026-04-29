@@ -7,7 +7,7 @@ export default function NotFoundPage() {
     <main className="min-h-screen bg-void flex flex-col items-center justify-center px-6 text-center">
       <SEO 
         title="404 — Page Not Found"
-        description="The page you are looking for does not exist. Return to CivicGuide AI to get informed about your election rights."
+        description="The page you are looking for does not exist. Return to CivicMind for election guidance."
         path="/404"
       />
       

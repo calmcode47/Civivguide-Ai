@@ -14,7 +14,7 @@ import { type ElectionTimelineResponse } from '@/types';
 // Constants & Helpers
 // =============================================================================
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 /**
  * Dynamic S-curve chain with depth and wobble.
@@ -242,7 +242,7 @@ export default function TimelinePage() {
   };
 
   const handleAskAI = (title: string) =>
-    navigate(`/assistant?prefill=Tell me more about ${encodeURIComponent(title)}`);
+    navigate(`/assistant?prefill=${encodeURIComponent(`Tell me more about ${title}`)}`);
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -288,7 +288,7 @@ export default function TimelinePage() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gold/25 bg-gold/5 mb-5"
           >
             <span className="text-[11px] font-semibold text-gold uppercase tracking-widest">
-              📋 Complete Election Process
+              India Election Workflow
             </span>
           </motion.div>
 
@@ -308,7 +308,7 @@ export default function TimelinePage() {
             transition={{ duration: 0.5, delay: 0.22 }}
             className="text-text-secondary max-w-md mx-auto text-sm sm:text-base leading-relaxed"
           >
-            Every step of the election process — from candidate registration to result certification.
+            Explore every major stage of an Indian election, from schedule announcement to government formation.
           </motion.p>
         </div>
       </section>
@@ -428,7 +428,13 @@ export default function TimelinePage() {
                         role="listitem"
                         aria-label={`Step ${step.order}: ${step.title}`}
                         tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && handleStepClick(step.id)}
+                        onKeyDown={(event) => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            handleStepClick(step.id);
+                          }
+                        }}
                         className="relative bg-abyss border rounded-2xl overflow-hidden scroll-mt-32 transition-all duration-300 cursor-default"
                         style={{
                           borderWidth: '1px',
