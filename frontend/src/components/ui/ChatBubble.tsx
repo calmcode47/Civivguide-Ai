@@ -262,7 +262,12 @@ export default function ChatBubble({
 
       <div style={bubbleStyle} className="group relative">
         {message.isStreaming ? (
-          <div role="status" aria-live="polite" aria-label="CivicMind is typing">
+          <div role="status" aria-live="polite" aria-label="CivicMind is typing" className="flex flex-col gap-3">
+            {message.content.trim().length > 0 ? (
+              <div aria-live="polite">
+                <MarkdownBlock content={message.content} hasError={hasError} />
+              </div>
+            ) : null}
             <LoadingDots />
           </div>
         ) : isUser ? (

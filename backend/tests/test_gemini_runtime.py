@@ -137,7 +137,7 @@ async def test_assistant_service_uses_deterministic_fallback_when_all_models_fai
     )
 
     assert result.intent == "registration"
-    assert result.reply.startswith("Here is the clearest way to approach this:")
+    assert "Form 6" in result.reply
     assert "https://voters.eci.gov.in/" in result.reply
 
 
@@ -206,5 +206,5 @@ async def test_assistant_service_streams_deterministic_fallback_when_gemini_stre
     chunks = [chunk async for chunk in assistant.stream_chat_reply(prepared)]
     reply = "".join(chunks)
 
-    assert "Here is the clearest way to approach this:" in reply
-    assert "Registration & Roll Check" in reply
+    assert "Form 6" in reply
+    assert "Voters' Service Portal" in reply or "https://voters.eci.gov.in/" in reply

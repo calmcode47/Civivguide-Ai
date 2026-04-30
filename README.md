@@ -141,8 +141,8 @@ This project is designed for users who need reliable election-process help witho
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODELS=gemini-2.0-flash,gemini-1.5-flash
-# GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODELS=gemini-flash-lite-latest,gemini-2.5-flash-lite
+# GEMINI_MODEL=gemini-flash-lite-latest
 GEMINI_CHAT_MAX_OUTPUT_TOKENS=500
 GEMINI_PLAN_MAX_OUTPUT_TOKENS=650
 GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300
@@ -186,7 +186,7 @@ VITE_FIREBASE_MEASUREMENT_ID=G-DQ8DX55P9Y
   - prefers explicit service-account credentials over ADC
 
 - `backend/app/services/gemini_service.py`
-  - tries `gemini-2.0-flash` first and `gemini-1.5-flash` second by default
+  - tries `gemini-flash-lite-latest` first and `gemini-2.5-flash-lite` second by default
   - retries on quota, rate-limit, resource-exhausted, and model-unavailable style errors
   - preserves a final local fallback path through the assistant service for both one-shot and streamed replies
 
@@ -281,7 +281,7 @@ gcloud run deploy civicmind-api \
   --project august-now-472515-h2 \
   --region asia-south1 \
   --allow-unauthenticated \
-  --set-env-vars ENVIRONMENT=production,GEMINI_MODELS=gemini-2.0-flash,gemini-1.5-flash,GEMINI_CHAT_MAX_OUTPUT_TOKENS=500,GEMINI_PLAN_MAX_OUTPUT_TOKENS=650,GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300,PROMPT_HISTORY_MESSAGE_LIMIT=6,GOOGLE_CLOUD_PROJECT=august-now-472515-h2,FIRESTORE_PROJECT_ID=new--project-82b99,ALLOWED_ORIGINS=https://new--project-82b99.web.app,https://new--project-82b99.firebaseapp.com \
+  --set-env-vars ENVIRONMENT=production,GEMINI_MODELS=gemini-flash-lite-latest,gemini-2.5-flash-lite,GEMINI_CHAT_MAX_OUTPUT_TOKENS=500,GEMINI_PLAN_MAX_OUTPUT_TOKENS=650,GEMINI_BALLOT_MAX_OUTPUT_TOKENS=300,PROMPT_HISTORY_MESSAGE_LIMIT=6,GOOGLE_CLOUD_PROJECT=august-now-472515-h2,FIRESTORE_PROJECT_ID=new--project-82b99,ALLOWED_ORIGINS=https://new--project-82b99.web.app,https://new--project-82b99.firebaseapp.com \
   --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest,FIRESTORE_CREDENTIALS_FILE=FIRESTORE_SERVICE_ACCOUNT_PATH:latest
 ```
 

@@ -88,4 +88,21 @@ describe('ChatBubble', () => {
       expect.objectContaining({ rating: 5 })
     );
   });
+
+  it('shows partial assistant content while streaming', () => {
+    render(
+      <ChatBubble
+        message={{
+          id: 'assistant-streaming',
+          role: 'assistant',
+          content: 'Carry your EPIC and one valid photo ID.',
+          timestamp: new Date('2026-04-30T10:35:00Z'),
+          isStreaming: true,
+        }}
+      />
+    );
+
+    expect(screen.getByText(/carry your epic and one valid photo id/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/civicmind is typing/i)).toBeInTheDocument();
+  });
 });

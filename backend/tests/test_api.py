@@ -69,6 +69,24 @@ def test_chat_flow_persists_session_history() -> None:
         assert session_payload["session"]["message_count"] == 2
 
 
+def test_chat_fallback_answers_documents_question_directly() -> None:
+    with make_client() as client:
+        chat_response = client.post(
+            "/api/chat",
+            json={
+                "message": "What documents should I carry on polling day?",
+                "user_context": "First-Time Voter",
+                "stage_context": "Polling Day",
+                "language": "en",
+            },
+        )
+
+    assert chat_response.status_code == 200
+    reply = chat_response.json()["data"]["reply"]
+    assert "EPIC" in reply or "photo ID" in reply
+    assert "Use this stage as your anchor" not in reply
+
+
 def test_specialised_assistant_endpoints_return_payloads() -> None:
     with make_client() as client:
         plan_response = client.post(

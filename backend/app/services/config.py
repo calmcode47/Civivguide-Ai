@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     )
 
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-flash-lite-latest"
     GEMINI_MODELS: str = ""
     GEMINI_CHAT_MAX_OUTPUT_TOKENS: int = 500
     GEMINI_PLAN_MAX_OUTPUT_TOKENS: int = 650
@@ -35,8 +35,8 @@ class Settings(BaseSettings):
         if self.GEMINI_MODELS.strip():
             return list(dict.fromkeys(item.strip() for item in self.GEMINI_MODELS.split(",") if item.strip()))
 
-        primary = self.GEMINI_MODEL.strip() or "gemini-2.0-flash"
-        fallback = "gemini-1.5-flash"
+        primary = self.GEMINI_MODEL.strip() or "gemini-flash-lite-latest"
+        fallback = "gemini-2.5-flash-lite"
         models = [primary]
         if fallback != primary:
             models.append(fallback)

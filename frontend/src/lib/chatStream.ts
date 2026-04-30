@@ -23,7 +23,8 @@ async function buildError(response: Response): Promise<Error> {
 
 export async function streamChatResponse(
   payload: StreamChatPayload,
-  onEvent: (event: ChatStreamEvent) => void
+  onEvent: (event: ChatStreamEvent) => void | Promise<void>,
+  signal?: AbortSignal
 ): Promise<void> {
   const response = await fetch(`${API_BASE}/api/chat/stream`, {
     method: 'POST',
@@ -32,6 +33,7 @@ export async function streamChatResponse(
       'X-Client-Version': '1.0.0',
     },
     body: JSON.stringify(payload),
+    signal,
   });
 
   if (!response.ok || !response.body) {
@@ -45,6 +47,7 @@ export async function streamChatResponse(
   while (true) {
     const { value, done } = await reader.read();
     if (done) {
+      buffer += decoder.decode();
       break;
     }
 
@@ -65,11 +68,11 @@ export async function streamChatResponse(
         continue;
       }
 
-      onEvent(JSON.parse(json) as ChatStreamEvent);
+      await onEvent(JSON.parse(json) as ChatStreamEvent);
     }
   }
 
   if (buffer.trim().startsWith('data: ')) {
-    onEvent(JSON.parse(buffer.trim().slice(6)) as ChatStreamEvent);
+    await onEvent(JSON.parse(buffer.trim().slice(6)) as ChatStreamEvent);
   }
 }

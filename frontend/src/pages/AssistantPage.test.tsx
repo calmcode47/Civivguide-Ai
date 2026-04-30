@@ -223,7 +223,8 @@ describe('AssistantPage', () => {
         stage_context: 'Polling Day',
         user_context: 'Candidate',
       }),
-      expect.any(Function)
+      expect.any(Function),
+      expect.any(AbortSignal)
     );
   });
 });
