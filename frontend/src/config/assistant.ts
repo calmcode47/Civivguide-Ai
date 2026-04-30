@@ -1,11 +1,6 @@
 import type { StageContext, UserContext } from '@/types';
 
-export const USER_CONTEXTS: UserContext[] = [
-  'First-Time Voter',
-  'Returning Voter',
-  'Candidate',
-  'Observer',
-];
+export const PRIMARY_USER_CONTEXT: UserContext = 'First-Time Voter';
 
 export const STAGE_CONTEXTS: StageContext[] = [
   'Pre-Announcement',

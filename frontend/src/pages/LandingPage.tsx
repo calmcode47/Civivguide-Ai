@@ -1,15 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import SEO from '@/components/SEO';
 import { GoldButton } from '@/components/ui';
-import DeferredThreeMount from '@/components/three/DeferredThreeMount';
-import { LazyThreeScene } from '@/components/three/LazyThreeScene';
 import { HERO_SUBTITLE, FEATURE_CARDS, HOW_IT_WORKS } from '@/config/content';
-
-// Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger);
 
 // =============================================================================
 // Sub-components
@@ -41,71 +33,40 @@ function StepArrow() {
 // =============================================================================
 
 export default function LandingPage() {
-  const pageRef = useRef<HTMLDivElement>(null);
-  const heroRef = useRef<HTMLElement>(null);
-  const featuresRef = useRef<HTMLElement>(null);
-  const howRef = useRef<HTMLElement>(null);
-  const ctaRef = useRef<HTMLElement>(null);
-
   const { scrollYProgress } = useScroll();
-  const prefersReducedMotion = useReducedMotion();
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.95]);
 
-  // ---- Animations -----------------------------------------------------------
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Reveal sections as they enter viewport
-      const sections = [featuresRef.current, howRef.current, ctaRef.current];
-
-      sections.forEach((section) => {
-        if (!section) return;
-
-        gsap.fromTo(
-          section,
-          { opacity: 0, y: 40 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1.2,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        );
-      });
-    }, pageRef);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div ref={pageRef} className="relative bg-void min-h-screen">
+    <div className="relative bg-void min-h-screen">
       <SEO 
-        title="Your AI-Powered Election Rights Guide"
-        description="Understand your election rights with AI. Get personalized, verified information on voting, registration, and election processes powered by Google Gemini."
+        title="Your First Vote, Made Clear"
+        description="CivicMind helps first-time voters in India understand registration, polling-day steps, booth checks, EVM and VVPAT, and official election verification."
         path="/"
       />
-      {/* Background Layer */}
-      {prefersReducedMotion ? (
-        <div className="pointer-events-none fixed inset-0 z-0 bg-void" aria-hidden="true" />
-      ) : (
-        <DeferredThreeMount
-          className="pointer-events-none fixed inset-0 z-0"
-          fallback={<div className="pointer-events-none fixed inset-0 z-0 bg-void" aria-hidden="true" />}
-        >
-          <LazyThreeScene loader={() => import('@/components/three/HeroCanvas')} />
-        </DeferredThreeMount>
-      )}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        aria-hidden="true"
+        style={{
+          background:
+            'radial-gradient(circle at 20% 20%, rgba(212,160,23,0.18), transparent 28%), radial-gradient(circle at 80% 18%, rgba(79,109,245,0.14), transparent 24%), linear-gradient(180deg, #0f1322 0%, #07080d 72%)',
+        }}
+      />
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-30"
+        aria-hidden="true"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          maskImage: 'linear-gradient(180deg, rgba(0,0,0,0.75), transparent 92%)',
+        }}
+      />
 
       {/* -------------------------------------------------------------------- */}
       {/* SECTION 1: HERO                                                      */}
       {/* -------------------------------------------------------------------- */}
       <motion.section
-        ref={heroRef}
         className="relative z-10 h-screen flex flex-col items-center justify-center px-4 overflow-hidden"
         style={{ opacity: heroOpacity, scale: heroScale }}
       >
@@ -118,7 +79,7 @@ export default function LandingPage() {
             className="px-4 py-1.5 rounded-full border border-gold/30 bg-gold-glow backdrop-blur-sm mb-8"
           >
             <span className="text-xs font-medium text-gold tracking-wider uppercase">
-              🗳️ AI-Powered Civic Assistant
+              First-Time Voter Guide
             </span>
           </motion.div>
 
@@ -129,9 +90,8 @@ export default function LandingPage() {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="text-hero font-display leading-[1.1] mb-8 text-white max-w-[900px]"
           >
-            Understand Your <br />
-            <span className="gold-gradient-text">Election Rights</span> <br />
-            With AI
+            Your <span className="gold-gradient-text">First Vote</span>,<br />
+            Explained Clearly
           </motion.h1>
 
           {/* Subtitle */}
@@ -184,15 +144,18 @@ export default function LandingPage() {
       {/* -------------------------------------------------------------------- */}
       {/* SECTION 2: FEATURE CARDS                                             */}
       {/* -------------------------------------------------------------------- */}
-      <section
-        ref={featuresRef}
+      <motion.section
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.75, ease: 'easeOut' }}
         className="relative z-10 section-padding bg-void"
         style={{
           background: 'radial-gradient(circle at center, #13172a 0%, #07080d 100%)'
         }}
       >
         <div className="content-width">
-          <h2 className="text-4xl text-center mb-16">Everything You Need to Know</h2>
+          <h2 className="text-4xl text-center mb-16">Everything A First-Time Voter Needs</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURE_CARDS.map((card, idx) => (
@@ -217,13 +180,16 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* -------------------------------------------------------------------- */}
       {/* SECTION 3: HOW IT WORKS                                              */}
       {/* -------------------------------------------------------------------- */}
-      <section
-        ref={howRef}
+      <motion.section
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.75, ease: 'easeOut' }}
         className="relative z-10 section-padding bg-abyss"
         style={{
           backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 10px)'
@@ -253,22 +219,28 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* -------------------------------------------------------------------- */}
       {/* SECTION 4: CTA BANNER                                                 */}
       {/* -------------------------------------------------------------------- */}
-      <section ref={ctaRef} className="relative z-10 section-padding">
+      <motion.section
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.75, ease: 'easeOut' }}
+        className="relative z-10 section-padding"
+      >
         <div className="content-width text-center bg-gold-glow border border-gold/10 rounded-[2rem] py-16 px-8 backdrop-blur-md">
           <h2 className="text-3xl mb-4">Ready to Become an Informed Voter?</h2>
           <p className="text-text-secondary mb-10 max-w-md mx-auto">
-            Your AI guide to the democratic process is one click away.
+            Start with the question that matters most before your first vote.
           </p>
           <GoldButton size="lg" href="/assistant">
             Talk to CivicMind →
           </GoldButton>
         </div>
-      </section>
+      </motion.section>
 
       {/* -------------------------------------------------------------------- */}
       {/* FOOTER                                                               */}

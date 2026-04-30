@@ -29,7 +29,7 @@ interface BallotDecodePayload {
 
 const SAMPLE_BALLOT_SECTIONS: BallotSection[] = [
   {
-    title: 'Candidate Panel',
+    title: 'Ballot Panel',
     items: [
       {
         label: 'Lok Sabha Candidate Listing',
@@ -132,7 +132,7 @@ export default function BallotDecoderPage() {
     <main className="min-h-screen bg-void pt-24 pb-20 px-6">
       <SEO
         title="Ballot Decoder"
-        description="Decode Indian election terms like EVM, VVPAT, constituency, candidate symbol, affidavit, and NOTA in simple language."
+        description="Decode Indian election terms like EVM, VVPAT, constituency, candidate symbol, affidavit, and NOTA in simple language for first-time voters."
         path="/ballot-decoder"
       />
 
@@ -142,7 +142,7 @@ export default function BallotDecoderPage() {
             <h1 className="text-3xl font-display font-bold text-white mb-2">
               The Interactive <span className="text-gold">Ballot Guide</span>
             </h1>
-            <p className="text-text-secondary text-sm">Click any highlighted election term to decode it in plain language.</p>
+            <p className="text-text-secondary text-sm">Click any highlighted election term to decode it in plain language before your first vote.</p>
           </header>
 
           <div className="bg-[#f6f1dc] rounded-sm shadow-2xl p-8 sm:p-12 text-void relative overflow-hidden">
@@ -156,7 +156,7 @@ export default function BallotDecoderPage() {
                   <span>India Election Flow</span>
                   <span>Voter Help View</span>
                 </div>
-                <h2 className="text-2xl font-black uppercase tracking-widest leading-none">Sample Candidate and Booth Terms</h2>
+                <h2 className="text-2xl font-black uppercase tracking-widest leading-none">Sample Ballot and Booth Terms</h2>
                 <p className="text-[10px] font-bold mt-2">Plain-language guide for EVM, VVPAT, candidate symbols, and voter options</p>
               </header>
 

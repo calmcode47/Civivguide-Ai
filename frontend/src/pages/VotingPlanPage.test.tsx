@@ -1,3 +1,4 @@
+import { axe } from 'jest-axe';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HelmetProvider } from 'react-helmet-async';
@@ -39,7 +40,7 @@ describe('VotingPlanPage', () => {
       },
     });
 
-    render(
+    const { container } = render(
       <HelmetProvider>
         <VotingPlanPage />
       </HelmetProvider>
@@ -66,5 +67,8 @@ describe('VotingPlanPage', () => {
       'voting_plan_generated',
       expect.objectContaining({ stage_context: 'Campaign Period' })
     );
+
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
   });
 });

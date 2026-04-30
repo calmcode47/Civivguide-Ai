@@ -317,6 +317,27 @@ Useful follow-up directions:
 
         if self._contains_any(
             lowered,
+            (
+                "polling day process",
+                "what happens when i reach",
+                "what happens at the polling booth",
+                "queue process",
+                "what happens at the booth",
+                "process at the booth",
+            ),
+        ):
+            return (
+                "Here is the usual polling-day sequence:\n\n"
+                "1. Reach the correct polling booth and confirm your entry with the help desk or polling staff.\n"
+                "2. Complete identity verification using your voter details and accepted photo ID.\n"
+                "3. Follow the polling staff instructions, receive your turn, and move to the EVM when directed.\n"
+                "4. Cast your vote on the EVM and briefly check the VVPAT display.\n"
+                "5. If your name or details do not match, ask the staff to re-check the final roll or supplementary list before leaving.\n\n"
+                f"Official references: {OFFICIAL_RESOURCES['voters_portal'].url} and {OFFICIAL_RESOURCES['eci'].url}"
+            )
+
+        if self._contains_any(
+            lowered,
             ("name missing", "not on the list", "missing name", "cannot find my name", "name not found"),
         ):
             return (

@@ -1,5 +1,5 @@
 export const HERO_SUBTITLE =
-  'Ask practical questions about voter enrolment, EVM and VVPAT, polling-day preparation, nomination stages, and counting workflows with Google Gemini-backed guidance.';
+  'Get clear, non-partisan help for your first vote: registration, booth lookup, polling-day preparation, EVM and VVPAT, and official verification through Google-powered guidance.';
 
 export interface FeatureCard {
   icon: string;
@@ -10,28 +10,28 @@ export interface FeatureCard {
 export const FEATURE_CARDS: FeatureCard[] = [
   {
     icon: '🧾',
-    title: 'Voter Enrolment Clarity',
-    description: 'Understand new registration, corrections, address transfer, and electoral roll checks without legal jargon.',
+    title: 'Registration Made Clear',
+    description: 'Understand first-time enrolment, corrections, address transfer, and electoral-roll checks without legal jargon.',
   },
   {
     icon: '🗓️',
-    title: 'Election Timeline Map',
-    description: 'Follow the full India election cycle from schedule announcement to counting and government formation.',
+    title: 'First-Time Voter Timeline',
+    description: 'Follow the India election cycle in the order a first-time voter actually experiences it, from preparation to results.',
   },
   {
     icon: '🤖',
-    title: 'Context-Aware Assistant',
-    description: 'Switch between first-time voter, returning voter, candidate, and observer contexts for more relevant answers.',
+    title: 'Stage-Aware Assistant',
+    description: 'Ask questions at any election stage and get concise answers focused on booth checks, documents, EVM/VVPAT, and official next steps.',
   },
   {
     icon: '🧠',
     title: 'EVM and Ballot Decoder',
-    description: 'Decode terms like constituency, candidate symbol, NOTA, affidavit, EVM, and VVPAT in plain language.',
+    description: 'Decode terms like constituency, candidate symbol, NOTA, EVM, and VVPAT in plain language before polling day.',
   },
   {
     icon: '✅',
-    title: 'Polling-Day Planning',
-    description: 'Generate a practical checklist for documents, booth verification, travel timing, and official last-mile checks.',
+    title: 'Polling-Day Checklist',
+    description: 'Generate a practical checklist for documents, booth verification, travel timing, and last-mile official checks.',
   },
   {
     icon: '🏛️',
@@ -49,13 +49,13 @@ export interface HowItWorksStep {
 export const HOW_IT_WORKS: HowItWorksStep[] = [
   {
     step: '01',
-    title: 'Choose Your Context',
-    description: 'Start as a first-time voter, returning voter, candidate, or observer so the assistant can respond more intelligently.',
+    title: 'Start With Your Stage',
+    description: 'Choose the election stage you are dealing with so the assistant can focus on the right first-time-voter tasks.',
   },
   {
     step: '02',
-    title: 'Ask a Real Election Question',
-    description: 'Query the process in plain language, whether you need enrolment help, polling guidance, or election-stage clarity.',
+    title: 'Ask A Real Voting Question',
+    description: 'Use plain language to ask about registration, booth lookup, documents, EVM/VVPAT, or polling-day readiness.',
   },
   {
     step: '03',

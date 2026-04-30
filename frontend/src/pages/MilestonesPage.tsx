@@ -173,7 +173,7 @@ export default function MilestonesPage() {
                 Key <span className="text-gold">Milestones</span>
               </h1>
               <p className="text-text-secondary max-w-xl">
-                This view does not assume live election dates. Use it as a stage-by-stage readiness guide, and add an official polling date only after it is announced by ECI.
+                This view does not assume live election dates. Use it as a first-time-voter readiness guide, and add an official polling date only after it is announced by ECI.
               </p>
             </div>
 

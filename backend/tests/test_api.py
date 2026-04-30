@@ -69,6 +69,27 @@ def test_chat_flow_persists_session_history() -> None:
         assert session_payload["session"]["message_count"] == 2
 
 
+def test_chat_endpoint_sanitizes_html_input_before_saving_history() -> None:
+    with make_client() as client:
+        chat_response = client.post(
+            "/api/chat",
+            json={
+                "message": "<b>What documents should I carry on polling day?</b>",
+                "user_context": "First-Time Voter",
+                "stage_context": "Polling Day",
+                "language": "en",
+            },
+        )
+
+        session_id = chat_response.json()["data"]["session_id"]
+        session_response = client.get(f"/api/sessions/{session_id}")
+
+    assert chat_response.status_code == 200
+    history = session_response.json()["data"]["messages"]
+    assert history[0]["content"] == "What documents should I carry on polling day?"
+    assert "<b>" not in history[0]["content"]
+
+
 def test_chat_fallback_answers_documents_question_directly() -> None:
     with make_client() as client:
         chat_response = client.post(
@@ -85,6 +106,20 @@ def test_chat_fallback_answers_documents_question_directly() -> None:
     reply = chat_response.json()["data"]["reply"]
     assert "EPIC" in reply or "photo ID" in reply
     assert "Use this stage as your anchor" not in reply
+
+
+def test_chat_endpoint_rejects_messages_above_length_cap() -> None:
+    with make_client() as client:
+        response = client.post(
+            "/api/chat",
+            json={
+                "message": "x" * 2001,
+                "user_context": "First-Time Voter",
+                "language": "en",
+            },
+        )
+
+    assert response.status_code == 422
 
 
 def test_specialised_assistant_endpoints_return_payloads() -> None:

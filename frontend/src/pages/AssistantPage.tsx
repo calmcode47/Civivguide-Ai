@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import SEO from '@/components/SEO';
-import { STAGE_CONTEXTS, USER_CONTEXTS } from '@/config/assistant';
+import { PRIMARY_USER_CONTEXT, STAGE_CONTEXTS } from '@/config/assistant';
 import { useApiHealth } from '@/hooks/useApiHealth';
 import { useChat } from '@/hooks/useChat';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -135,7 +135,6 @@ export default function AssistantPage() {
     switchSession,
     deleteSessionLocal,
     clearAllSessions,
-    setUserContext,
     setStageContext,
     error: chatError,
     setError: setChatError,
@@ -151,7 +150,7 @@ export default function AssistantPage() {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const session = getActiveSession();
-  const currentUserContext = session?.userContext ?? 'First-Time Voter';
+  const currentUserContext = session?.userContext ?? PRIMARY_USER_CONTEXT;
   const currentStageContext = session?.stageContext ?? DEFAULT_STAGE_CONTEXT;
   const { suggestions, isLoading: suggestionsLoading } = useSuggestions(
     currentUserContext,
@@ -194,7 +193,7 @@ export default function AssistantPage() {
         setSyncMessage(
           response.data.data.sessions.length > 0
             ? 'Sessions loaded from Firestore.'
-            : 'Ready to save new conversations to Firestore.'
+            : 'Ready to save new first-time-voter conversations to Firestore.'
         );
       } catch {
         if (active) {
@@ -393,7 +392,7 @@ export default function AssistantPage() {
     <div className="flex h-screen overflow-hidden bg-void">
       <SEO
         title="Election Assistant"
-        description="Ask clear questions about voter enrolment, EVM and VVPAT, election timelines, nomination, polling day, and result procedures in India."
+        description="Ask first-time-voter questions about registration, booth checks, accepted ID, EVM and VVPAT, polling day, and official election verification in India."
         path="/assistant"
       />
 
@@ -466,11 +465,11 @@ export default function AssistantPage() {
           <div className="space-y-3 rounded-2xl border border-border/40 bg-void/60 p-4">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
               <span className="text-text-secondary">Assistant Mode</span>
-              <span className="text-gold">Guest</span>
+              <span className="text-gold">First-Time Voter</span>
             </div>
             <div className="text-xs leading-relaxed text-text-secondary">
               When the backend is live, conversations sync to Firestore. Local storage remains an
-              offline cache so you can keep working during brief outages.
+              offline cache so first-time-voter guidance stays available during brief outages.
             </div>
             <div className="flex flex-wrap gap-2" aria-live="polite">
               <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wider text-text-secondary">
@@ -486,7 +485,7 @@ export default function AssistantPage() {
             <p className="text-[10px] uppercase tracking-widest text-text-secondary/60">
               {isSyncingSessions
                 ? 'Refreshing backend sessions...'
-                : syncMessage ?? 'Ready for secure, non-partisan election guidance.'}
+                : syncMessage ?? 'Ready for secure, first-time-voter election guidance.'}
             </p>
           </div>
 
@@ -515,9 +514,9 @@ export default function AssistantPage() {
               </svg>
             </button>
             <div>
-              <span className="font-medium text-white">India Election Assistant</span>
+              <span className="font-medium text-white">First-Time Voter Assistant</span>
               <p className="text-[10px] uppercase tracking-widest text-text-secondary/60">
-                Context-aware guidance for {currentStageContext}
+                Stage-aware guidance for {currentStageContext}
               </p>
             </div>
           </div>
@@ -547,23 +546,15 @@ export default function AssistantPage() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
               <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-gold opacity-80">
-                User Context
+                Guidance Profile
               </span>
-              <div role="group" aria-label="Select your assistant context" className="flex items-center gap-2">
-                {USER_CONTEXTS.map((context) => (
-                  <button
-                    key={context}
-                    onClick={() => setUserContext(context)}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${
-                      currentUserContext === context
-                        ? 'scale-105 border-gold bg-gold text-void shadow-gold-glow'
-                        : 'border-border/60 bg-abyss/30 text-text-secondary hover:border-gold/40 hover:text-gold'
-                    }`}
-                    aria-pressed={currentUserContext === context}
-                  >
-                    {context}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3">
+                <span className="whitespace-nowrap rounded-full border border-gold bg-gold px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-void shadow-gold-glow">
+                  First-Time Voter
+                </span>
+                <p className="text-xs leading-relaxed text-text-secondary">
+                  Tuned for registration, booth lookup, accepted ID, EVM and VVPAT, and polling-day confidence.
+                </p>
               </div>
             </div>
 
@@ -604,11 +595,11 @@ export default function AssistantPage() {
                 >
                   <ShieldIcon />
                   <h2 className="mt-6 mb-2 text-2xl font-display text-white">
-                    Ask about voter enrolment, polling, EVM, or result stages
+                    Ask what a first-time voter should do next
                   </h2>
                   <p className="max-w-md text-text-secondary">
-                    CivicMind adapts its guidance to both your role and the current election stage so
-                    the next steps stay practical and non-partisan.
+                    CivicMind keeps answers practical: how to register, what documents to carry,
+                    how to verify your booth, and what to expect on polling day.
                   </p>
                   {suggestionsLoading ? (
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -682,7 +673,7 @@ export default function AssistantPage() {
           <div className="mx-auto w-full max-w-[760px]">
             <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-widest text-text-secondary/70">
               <span className="rounded-full border border-white/10 px-2 py-1">
-                {currentUserContext}
+                First-Time Voter
               </span>
               <span className="rounded-full border border-white/10 px-2 py-1">
                 {currentStageContext}
@@ -709,7 +700,7 @@ export default function AssistantPage() {
                       handleSend();
                     }
                   }}
-                  placeholder={`Ask a ${currentStageContext.toLowerCase()} question about enrolment, polling, nominations, or counting.`}
+                  placeholder={`Ask a ${currentStageContext.toLowerCase()} question about registration, booth checks, documents, EVM, or polling-day steps.`}
                   className="w-full resize-none rounded-2xl border border-border bg-surface px-4 py-3.5 font-body text-[0.95rem] text-text-primary placeholder-text-secondary/50 transition-all focus:border-gold focus:outline-none focus:ring-4 focus:ring-gold-glow"
                   style={{ minHeight: '54px' }}
                   aria-label="Ask CivicMind a question"

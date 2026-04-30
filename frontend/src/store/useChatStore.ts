@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
 
 import type {
   ChatSession,
@@ -39,11 +38,19 @@ interface ChatActions {
 const DEFAULT_USER_CONTEXT: UserContext = 'First-Time Voter';
 const DEFAULT_STAGE_CONTEXT: StageContext = 'Pre-Announcement';
 
+function createId(prefix = ''): string {
+  const value =
+    typeof globalThis.crypto?.randomUUID === 'function'
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return prefix ? `${prefix}${value}` : value;
+}
+
 const buildSession = (
   userContext: UserContext = DEFAULT_USER_CONTEXT,
   stageContext: StageContext = DEFAULT_STAGE_CONTEXT
 ): ChatSession => ({
-  id: `session_${uuidv4()}`,
+  id: createId('session_'),
   messages: [],
   userContext,
   stageContext,
@@ -61,10 +68,7 @@ const initialState: ChatState = {
   error: null,
 };
 
-function normalizeUserContext(context: string | undefined): UserContext {
-  if (context === 'Returning Voter' || context === 'Candidate' || context === 'Observer') {
-    return context;
-  }
+function normalizeUserContext(_context: string | undefined): UserContext {
   return DEFAULT_USER_CONTEXT;
 }
 
@@ -128,8 +132,15 @@ export const useChatStore = create<ChatState & ChatActions>()(
           return;
         }
 
+        const normalizedSessions = sessions.map((session) => ({
+          ...session,
+          userContext: DEFAULT_USER_CONTEXT,
+          stageContext: normalizeStageContext(String(session.stageContext ?? DEFAULT_STAGE_CONTEXT)),
+        }));
+
         set({
-          activeSessionId: activeSessionId ?? sessions[0].id,
+          sessions: normalizedSessions,
+          activeSessionId: activeSessionId ?? normalizedSessions[0].id,
           isInitialised: true,
         });
       },
@@ -210,7 +221,7 @@ export const useChatStore = create<ChatState & ChatActions>()(
         }
 
         const newMessage: Message = {
-          id: uuidv4(),
+          id: createId(),
           timestamp: new Date(),
           ...message,
         };
@@ -266,11 +277,12 @@ export const useChatStore = create<ChatState & ChatActions>()(
         if (!activeSessionId) {
           return;
         }
+        const normalizedContext = normalizeUserContext(context);
 
         set((state) => ({
           sessions: state.sessions.map((session) =>
             session.id === activeSessionId
-              ? { ...session, userContext: context, updatedAt: new Date() }
+              ? { ...session, userContext: normalizedContext, updatedAt: new Date() }
               : session
           ),
         }));

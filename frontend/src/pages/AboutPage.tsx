@@ -1,12 +1,10 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
-import DeferredThreeMount from '@/components/three/DeferredThreeMount';
-import { LazyThreeScene } from '@/components/three/LazyThreeScene';
 
 const VALUES = [
   {
-    title: 'Non-Partisan Guidance',
-    description: 'The assistant is designed to explain election process, not politics. It focuses on steps, rules, and official verification.',
+    title: 'First-Time Voter Focus',
+    description: 'Every major flow is tuned for the questions a first-time voter actually asks: registration, booth lookup, accepted ID, EVM and VVPAT, and polling-day confidence.',
     icon: '⚖️',
   },
   {
@@ -16,41 +14,37 @@ const VALUES = [
   },
   {
     title: 'Practical Accessibility',
-    description: 'Dense election procedures are translated into plain-language actions that first-time voters and busy returning voters can actually use.',
+    description: 'Dense election procedures are translated into plain-language actions that first-time voters can follow without already knowing election jargon.',
     icon: '🔓',
   },
 ];
 
 export default function AboutPage() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <main className="relative bg-void min-h-screen pt-24 pb-20 overflow-hidden">
       <SEO
         title="About CivicMind"
-        description="Learn how CivicMind uses Gemini, Firestore, and an India-focused election knowledge layer to explain voting procedures clearly and responsibly."
+        description="Learn how CivicMind uses Gemini, Firestore, and focused first-time-voter guidance to explain Indian election procedures clearly and responsibly."
         path="/about"
       />
 
-      {prefersReducedMotion ? (
-        <div className="fixed inset-0 pointer-events-none bg-void opacity-20" aria-hidden="true" />
-      ) : (
-        <DeferredThreeMount
-          className="fixed inset-0 pointer-events-none opacity-20"
-          fallback={<div className="fixed inset-0 pointer-events-none bg-void opacity-20" aria-hidden="true" />}
-        >
-          <LazyThreeScene loader={() => import('@/components/three/HeroCanvas')} />
-        </DeferredThreeMount>
-      )}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-30"
+        aria-hidden="true"
+        style={{
+          background:
+            'radial-gradient(circle at 18% 18%, rgba(212,160,23,0.18), transparent 26%), radial-gradient(circle at 82% 18%, rgba(79,109,245,0.12), transparent 24%), linear-gradient(180deg, #0d1020 0%, #07080d 76%)',
+        }}
+      />
 
       <div className="relative z-10 content-width px-6">
         <header className="max-w-3xl mb-24">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <h1 className="text-5xl md:text-6xl font-display text-white mb-8">
-              Built for <span className="gold-gradient-text">Election Clarity</span>
+              Built for <span className="gold-gradient-text">First-Time Voter Clarity</span>
             </h1>
             <p className="text-xl text-text-secondary leading-relaxed font-body">
-              CivicMind is a practical assistant for understanding Indian election procedures. It is designed to help users move from confusion to action with clear steps, verified process guidance, and strong non-partisan boundaries.
+              CivicMind is a practical assistant for first-time voters navigating Indian election procedures. It is designed to move users from confusion to action with clear steps, verified process guidance, and strong non-partisan boundaries.
             </p>
           </motion.div>
         </header>
@@ -79,13 +73,13 @@ export default function AboutPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-3xl font-display text-white mb-6">Architecture for Google Prompt Wars</h2>
+            <h2 className="text-3xl font-display text-white mb-6">A Focused Product, Not A Generic Chatbot</h2>
             <div className="space-y-6 text-text-secondary leading-relaxed">
               <p>
-                The product pairs a high-context frontend with a Cloud Run backend that uses Gemini for answer generation and Firestore for conversation persistence. Static election knowledge, persona-aware prompting, and official-source rules sit in the backend so every feature follows the same logic.
+                The product pairs a high-context frontend with a Cloud Run backend that uses Gemini for answer generation and Firestore for conversation persistence. Static election knowledge, stage-aware prompting, and official-source rules sit in the backend so every feature follows the same logic.
               </p>
               <p>
-                The result is a system that does more than answer questions. It distinguishes voter and candidate contexts, avoids invented dates, and keeps the user anchored to official ECI verification whenever real-world details can change.
+                The result is a system that does more than answer questions. It stays anchored on the first-time-voter journey, avoids invented dates, and keeps users tied to official ECI verification whenever real-world details can change.
               </p>
             </div>
           </motion.div>
@@ -97,30 +91,44 @@ export default function AboutPage() {
             transition={{ duration: 0.8 }}
             className="aspect-square bg-abyss border border-gold/10 rounded-[2rem] flex items-center justify-center relative overflow-hidden shadow-2xl shadow-gold/5"
           >
-            <div className="absolute inset-0 z-0">
-              {prefersReducedMotion ? (
-                <div
-                  className="h-full w-full bg-[radial-gradient(circle_at_center,rgba(212,160,23,0.16),transparent_60%)]"
-                  aria-hidden="true"
-                />
-              ) : (
-                <DeferredThreeMount
-                  className="h-full w-full"
-                  fallback={
-                    <div
-                      className="h-full w-full bg-[radial-gradient(circle_at_center,rgba(212,160,23,0.16),transparent_60%)]"
-                      aria-hidden="true"
-                    />
-                  }
-                >
-                  <LazyThreeScene loader={() => import('@/components/three/GlobeScene')} />
-                </DeferredThreeMount>
-              )}
-            </div>
-
-            <div className="absolute bottom-8 left-8 right-8 z-10 text-center pointer-events-none">
-              <div className="inline-block px-3 py-1 bg-void/60 backdrop-blur-md border border-gold/20 rounded-full">
-                <p className="text-gold font-medium uppercase tracking-[0.2em] text-[10px]">Gemini + Firestore + Civic UX</p>
+            <div
+              className="absolute inset-0 z-0"
+              aria-hidden="true"
+              style={{
+                background:
+                  'radial-gradient(circle at center, rgba(212,160,23,0.16), transparent 60%), linear-gradient(180deg, rgba(255,255,255,0.02), transparent 65%)',
+              }}
+            />
+            <div className="relative z-10 flex h-full w-full flex-col justify-between p-8">
+              <div className="flex flex-wrap gap-2">
+                {['Registration', 'Booth Check', 'Polling Day', 'Results'].map((label) => (
+                  <span
+                    key={label}
+                    className="rounded-full border border-gold/20 bg-void/50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gold"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold/80">
+                    First-Time Voter Flow
+                  </p>
+                  <ol className="mt-3 space-y-2 text-sm leading-relaxed text-text-secondary">
+                    <li>1. Verify your name in the voter roll.</li>
+                    <li>2. Confirm your booth and accepted ID.</li>
+                    <li>3. Understand EVM and VVPAT before polling day.</li>
+                    <li>4. Re-check live details only through ECI channels.</li>
+                  </ol>
+                </div>
+                <div className="text-center pointer-events-none">
+                  <div className="inline-block px-3 py-1 bg-void/60 backdrop-blur-md border border-gold/20 rounded-full">
+                    <p className="text-gold font-medium uppercase tracking-[0.2em] text-[10px]">
+                      Gemini + Firestore + Civic UX
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>

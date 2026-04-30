@@ -1,6 +1,6 @@
-# Civicguide
+# CivicMind
 
-CivicMind is an India-focused election-process assistant built for Google Prompt Wars. It helps users understand voter enrolment, election timelines, nomination stages, polling-day flow, ballot terminology, and post-result process steps in a clear, interactive, non-partisan way.
+CivicMind is an India-focused election-process assistant built for Google Prompt Wars. The product is intentionally centered on one challenge vertical: **first-time voter guidance**. It helps new voters understand registration, booth verification, accepted ID, polling-day flow, ballot terminology, and official verification in a clear, interactive, non-partisan way.
 
 Live Demo: https://new--project-82b99.web.app
 
@@ -8,17 +8,17 @@ API Backend: https://civicmind-api-854444982376.asia-south1.run.app
 
 ## Chosen Vertical
 
-**Civic accessibility and public-process guidance**
+**First-Time Voter Guidance**
 
-This project is designed for users who need reliable election-process help without reading dense legal or procedural material. The product focuses on clarity, step-by-step guidance, and strong official-source boundaries.
+This project is designed for first-time voters who need reliable election-process help without reading dense legal or procedural material. The product focuses on clarity, step-by-step guidance, stage-aware decision making, and strong official-source boundaries.
 
 ## What The Product Does
 
 ### 1. Election Assistant
 
-- Answers free-form election-process questions.
-- Adjusts guidance for `First-Time Voter`, `Returning Voter`, `Candidate`, and `Observer`.
+- Answers free-form first-time-voter questions.
 - Adapts replies to the active election stage: `Pre-Announcement`, `Registration & Roll Check`, `Campaign Period`, `Polling Day`, or `Counting & Results`.
+- Keeps the public product flow centered on the first-time-voter journey instead of presenting a broad multi-persona chatbot.
 - Avoids inventing live dates or constituency-specific facts.
 - Streams replies progressively from the backend, supports in-answer translation, and captures answer quality feedback.
 - Uses a Gemini model chain first, then falls back to grounded built-in guidance if Gemini is unavailable or throttled.
@@ -32,7 +32,7 @@ This project is designed for users who need reliable election-process help witho
 
 ### 3. Voting Plan Generator
 
-- Walks the user through a short planning flow.
+- Walks the user through a short first-time-voter planning flow.
 - Produces a practical polling-day checklist.
 - Lets the user choose the current election stage so the checklist changes with their situation.
 - Pushes live verification back to official channels.
@@ -40,7 +40,7 @@ This project is designed for users who need reliable election-process help witho
 ### 4. Ballot Decoder
 
 - Explains terms such as `EVM`, `VVPAT`, `NOTA`, `constituency`, `candidate symbol`, and `affidavit`.
-- Uses backend logic instead of static tooltip text alone.
+- Uses backend logic instead of static tooltip text alone so the explanations stay consistent with the rest of the assistant.
 
 ### 5. Milestones Dashboard
 
@@ -49,11 +49,11 @@ This project is designed for users who need reliable election-process help witho
 
 ## Why This Fits The Challenge
 
-- **Smart, dynamic assistant**: backend intent detection and persona-aware responses change the guidance path based on user context.
-- **Logical decision making**: the assistant, suggestions, voting plan, and ballot decoder all branch according to user needs and election stage.
+- **Smart, dynamic assistant**: backend intent detection, stage-aware prompting, streamed replies, and direct deterministic fallback make the assistant feel designed rather than generic.
+- **Logical decision making**: the assistant, suggestions, voting plan, and milestone flow all branch according to the user's election stage and first-time-voter task.
 - **Google services integration**: Gemini, Firestore, Firebase Hosting, Firebase Analytics, Google Translate, and Cloud Run are all integrated into the deployment design.
-- **Practical usability**: the product supports both exploratory learning and task-based flows.
-- **Clean code**: the backend is separated into routers, services, schemas, and tests; the frontend uses typed state and a clearer runtime config model.
+- **Practical usability**: the product supports both exploratory learning and task-based flows such as booth checks, registration, and polling-day planning.
+- **Clean code**: the backend is separated into routers, services, schemas, and tests; the frontend uses typed state, backend-first session sync, and a lighter visual layer without unnecessary WebGL overhead.
 
 ## Architecture
 
@@ -64,7 +64,6 @@ This project is designed for users who need reliable election-process help witho
 - Vite
 - Tailwind CSS
 - Framer Motion
-- React Three Fiber / Three.js
 - Zustand
 - Firebase Analytics
 
@@ -82,7 +81,7 @@ This project is designed for users who need reliable election-process help witho
 ### Gemini API
 
 - Generates conversational explanations.
-- Produces personalised voting plans.
+- Produces personalised first-time-voter voting plans.
 - Simplifies election and ballot terminology.
 - Tries a lightweight ordered model chain before dropping to deterministic local guidance.
 
@@ -175,7 +174,7 @@ VITE_FIREBASE_MEASUREMENT_ID=G-DQ8DX55P9Y
 ### Core services
 
 - `backend/app/services/assistant_service.py`
-  - detects intent and persona
+  - detects intent and first-time-voter task type
   - threads election-stage context into prompts, suggestions, and deterministic fallback
   - trims prompt history and applies task-specific token caps
   - returns deterministic fallback guidance when the Gemini model chain is unavailable
@@ -191,7 +190,7 @@ VITE_FIREBASE_MEASUREMENT_ID=G-DQ8DX55P9Y
   - preserves a final local fallback path through the assistant service for both one-shot and streamed replies
 
 - `backend/app/data/election_content.py`
-  - stores India-specific timeline content, suggestions, and official references
+  - stores India-specific timeline content, first-time-voter suggestions, and official references
 
 ### API surface
 
@@ -246,12 +245,14 @@ git ls-files -z | xargs -0 du -ch 2>/dev/null | tail -n 1
 
 Results:
 
-- `17 passed` in backend tests
+- `22 passed` in backend tests
 - backend compile pass
 - frontend typecheck pass
-- `7 passed` in frontend tests
+- `10 passed` in frontend tests
 - frontend production build pass
-- tracked repository size: about `932K`, well under the `10 MB` limit
+- build-time bundle budget pass with `628.4 KB` total JS and a `253.5 KB` largest chunk, with no route-level WebGL bundles
+- frontend production dependencies audit clean (`0 vulnerabilities`)
+- tracked repository size: about `972K`, well under the `10 MB` limit
 
 Additional browser smoke checks were completed locally for:
 
@@ -305,6 +306,7 @@ firebase deploy --project new--project-82b99 --only hosting
 - Firebase Hosting sends a CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy`.
 - The backend never returns raw internal exception strings on `500` responses and attaches `X-Request-ID` for traceability.
 - Translation failures use a safe generic service error instead of leaking provider details.
+- The frontend uses `crypto.randomUUID()` instead of the `uuid` dependency, removing an avoidable audit finding.
 - The UI keeps a global skip link, keyboard-safe session actions, accessible stage and feedback controls, mobile-nav focus management, and automated axe coverage for navigation.
 
 ## CI
@@ -316,6 +318,7 @@ GitHub Actions runs:
 - frontend `npm run lint`
 - frontend `npm run test`
 - frontend `npm run build`
+- frontend bundle-budget enforcement as part of the build step
 
 ## Deployment Status
 

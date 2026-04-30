@@ -146,7 +146,7 @@ export default function VotingPlanPage() {
     <main className="min-h-screen bg-void pt-20 pb-20 px-6 overflow-x-hidden">
       <SEO
         title="Voting Plan"
-        description="Create a personalised Indian election voting checklist with booth checks, document preparation, and polling-day guidance."
+        description="Create a first-time-voter checklist for booth checks, document preparation, and polling-day guidance in India."
         path="/voting-plan"
       />
 
@@ -161,10 +161,10 @@ export default function VotingPlanPage() {
             Voting Preparation Flow
           </motion.div>
           <h1 className="text-3xl sm:text-4xl font-display font-bold text-white mb-4">
-            Build Your <span className="text-gold">Polling-Day Plan</span>
+            Build Your <span className="text-gold">First Voting Plan</span>
           </h1>
           <p className="text-text-secondary max-w-md mx-auto text-sm sm:text-base leading-relaxed">
-            Answer three short questions and generate a practical, India-focused election checklist with official verification points.
+            Answer three short questions and generate a practical first-time-voter checklist with official verification points.
           </p>
         </header>
 

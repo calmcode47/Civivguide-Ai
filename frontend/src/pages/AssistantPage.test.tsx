@@ -1,4 +1,5 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { axe } from 'jest-axe';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HelmetProvider } from 'react-helmet-async';
@@ -205,9 +206,11 @@ describe('AssistantPage', () => {
       }
     );
 
-    renderAssistantPage();
+    const { container } = renderAssistantPage();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Candidate' }));
+    expect(screen.queryByRole('button', { name: 'Candidate' })).not.toBeInTheDocument();
+    expect(screen.getByText(/guidance profile/i)).toBeInTheDocument();
+    expect(screen.getByText(/tuned for registration, booth lookup/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Polling Day' }));
     await userEvent.type(
       screen.getByRole('textbox', { name: /ask civicmind a question/i }),
@@ -221,10 +224,13 @@ describe('AssistantPage', () => {
     expect(streamChatResponseMock).toHaveBeenCalledWith(
       expect.objectContaining({
         stage_context: 'Polling Day',
-        user_context: 'Candidate',
+        user_context: 'First-Time Voter',
       }),
       expect.any(Function),
       expect.any(AbortSignal)
     );
+
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
   });
 });

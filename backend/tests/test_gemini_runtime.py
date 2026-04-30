@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -208,3 +209,44 @@ async def test_assistant_service_streams_deterministic_fallback_when_gemini_stre
 
     assert "Form 6" in reply
     assert "Voters' Service Portal" in reply or "https://voters.eci.gov.in/" in reply
+
+
+class SlowGeminiService:
+    async def complete(self, prompt: str, *, max_output_tokens: int, **_: object) -> str:
+        await asyncio.sleep(1.1)
+        return prompt
+
+
+@pytest.mark.asyncio
+async def test_assistant_service_times_out_to_deterministic_first_time_voter_fallback() -> None:
+    assistant = AssistantService(
+        SlowGeminiService(),  # type: ignore[arg-type]
+        chat_completion_timeout_seconds=0.001,
+    )
+
+    result = await assistant.generate_chat_response(
+        message="What documents should I carry on polling day?",
+        history=[],
+        language="en",
+        user_context="First-Time Voter",
+        stage_context="Polling Day",
+    )
+
+    assert "EPIC" in result.reply or "photo ID" in result.reply
+    assert "Use this stage as your anchor" not in result.reply
+
+
+@pytest.mark.asyncio
+async def test_assistant_service_returns_direct_polling_day_process_fallback() -> None:
+    assistant = AssistantService(None)
+
+    result = await assistant.generate_chat_response(
+        message="What happens when I reach the polling booth?",
+        history=[],
+        language="en",
+        user_context="First-Time Voter",
+        stage_context="Polling Day",
+    )
+
+    assert "identity verification" in result.reply
+    assert "VVPAT" in result.reply
