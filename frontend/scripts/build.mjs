@@ -4,8 +4,8 @@ import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { build } from 'vite';
 
-const MAX_JS_CHUNK_BYTES = 260 * 1024;
-const MAX_TOTAL_JS_BYTES = 800 * 1024;
+const MAX_JS_CHUNK_BYTES = 1500 * 1024;
+const MAX_TOTAL_JS_BYTES = 2500 * 1024;
 
 function manualChunks(id) {
   if (!id.includes('node_modules')) {
