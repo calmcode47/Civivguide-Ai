@@ -77,6 +77,7 @@ export default function GlobeScene() {
       <WebGLCheck>
         <ThreeErrorBoundary componentName="GlobeScene">
           <Canvas gl={{ antialias: true, alpha: true }} dpr={[1, 1.75]}>
+            {/* @ts-expect-error type incompatibility between drei and three */}
             <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={45} />
 
             <ambientLight intensity={0.5} />

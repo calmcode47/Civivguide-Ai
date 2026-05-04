@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
+import DeferredThreeMount from '@/components/three/DeferredThreeMount';
+import { HeroCanvas, GlobeScene } from '@/components/three';
 
 const VALUES = [
   {
@@ -28,14 +30,11 @@ export default function AboutPage() {
         path="/about"
       />
 
-      <div
-        className="fixed inset-0 pointer-events-none opacity-30"
-        aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(circle at 18% 18%, rgba(212,160,23,0.18), transparent 26%), radial-gradient(circle at 82% 18%, rgba(79,109,245,0.12), transparent 24%), linear-gradient(180deg, #0d1020 0%, #07080d 76%)',
-        }}
-      />
+      <div className="fixed inset-0 pointer-events-none opacity-20" aria-hidden="true">
+        <DeferredThreeMount className="h-full w-full" fallback={<div className="h-full w-full" />}>
+          <HeroCanvas />
+        </DeferredThreeMount>
+      </div>
 
       <div className="relative z-10 content-width px-6">
         <header className="max-w-3xl mb-24">
@@ -91,14 +90,12 @@ export default function AboutPage() {
             transition={{ duration: 0.8 }}
             className="aspect-square bg-abyss border border-gold/10 rounded-[2rem] flex items-center justify-center relative overflow-hidden shadow-2xl shadow-gold/5"
           >
-            <div
-              className="absolute inset-0 z-0"
-              aria-hidden="true"
-              style={{
-                background:
-                  'radial-gradient(circle at center, rgba(212,160,23,0.16), transparent 60%), linear-gradient(180deg, rgba(255,255,255,0.02), transparent 65%)',
-              }}
-            />
+             {/* The Interactive 3D Component */}
+             <div className="absolute inset-0 z-0">
+               <DeferredThreeMount className="h-full w-full" fallback={<div className="h-full w-full" />}>
+                 <GlobeScene />
+               </DeferredThreeMount>
+             </div>
             <div className="relative z-10 flex h-full w-full flex-col justify-between p-8">
               <div className="flex flex-wrap gap-2">
                 {['Registration', 'Booth Check', 'Polling Day', 'Results'].map((label) => (

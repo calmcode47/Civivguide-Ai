@@ -37,6 +37,7 @@ export default function HeroCanvas() {
               {/* Global Fog for depth */}
               <fog attach="fog" args={['#07080d', 15, 40]} />
 
+              {/* @ts-expect-error type incompatibility between drei and three */}
               <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={60} />
 
               {/* Core Scene Components */}

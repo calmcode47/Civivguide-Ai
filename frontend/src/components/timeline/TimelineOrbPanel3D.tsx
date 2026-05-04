@@ -88,6 +88,7 @@ export default function TimelineOrbPanel3D({
                     lineWidth={lineWidth}
                     transparent
                     opacity={0.68}
+                    {...({} as any)}
                   />
                 ) : null}
 

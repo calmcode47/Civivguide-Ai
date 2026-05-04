@@ -8,7 +8,6 @@ import DeferredThreeMount from '@/components/three/DeferredThreeMount';
 import TimelineOrbPanel3D from '@/components/timeline/TimelineOrbPanel3D';
 import TimelineHeroBackground3D from '@/components/timeline/TimelineHeroBackground3D';
 import { trackEvent } from '@/lib/analytics';
-import { useChatStore } from '@/store/useChatStore';
 import { PHASE_COLORS } from '@/config/content';
 import apiClient from '@/lib/apiClient';
 import { type ElectionTimelineResponse, type StageContext } from '@/types';
