@@ -1,10 +1,15 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import SEO from '@/components/SEO';
 
 import { GoldButton, ErrorBanner } from '@/components/ui';
+import DeferredThreeMount from '@/components/three/DeferredThreeMount';
+import TimelineOrbPanel3D from '@/components/timeline/TimelineOrbPanel3D';
+import TimelineHeroBackground3D from '@/components/timeline/TimelineHeroBackground3D';
 import { trackEvent } from '@/lib/analytics';
+import { useChatStore } from '@/store/useChatStore';
+import { PHASE_COLORS } from '@/config/content';
 import apiClient from '@/lib/apiClient';
 import { type ElectionTimelineResponse, type StageContext } from '@/types';
 
@@ -58,6 +63,7 @@ function LoadingSkeleton() {
 export default function TimelinePage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
 
   const [data, setData] = useState<ElectionTimelineResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,32 +95,36 @@ export default function TimelinePage() {
     if (location.hash && data) {
       const id = location.hash.replace('#step-', '');
       setActiveStepId(id);
-      cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (cardRefs.current[id]) {
+        cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   }, [location.hash, data]);
 
   // ─── Derived state ────────────────────────────────────────────────────────
   const { filteredSteps, phases } = useMemo(() => {
-    if (!data) return { filteredSteps: [], phases: [] };
-    const allSteps = data.phases.flatMap(p => p.steps).sort((a, b) => a.order - b.order);
-    const steps = activePhase === 'all' ? allSteps : allSteps.filter(s => s.phase === activePhase);
-    return { filteredSteps: steps, phases: data.phases };
+    console.log('[TimelinePage] useMemo recalculating. data:', data);
+    if (!data || !Array.isArray(data.phases)) {
+      console.log('[TimelinePage] data is empty or phases missing');
+      return { filteredSteps: [], phases: [] };
+    }
+    try {
+      const allSteps = data.phases
+        .flatMap(p => (Array.isArray(p?.steps) ? p.steps : []))
+        .sort((a, b) => (Number(a?.order) || 0) - (Number(b?.order) || 0));
+      
+      console.log('[TimelinePage] allSteps calculated:', allSteps.length);
+      
+      const steps = activePhase === 'all' 
+        ? allSteps 
+        : allSteps.filter(s => s?.phase === activePhase);
+        
+      return { filteredSteps: steps, phases: data.phases };
+    } catch (e) {
+      console.error('[TimelinePage] Error in useMemo calculation:', e);
+      return { filteredSteps: [], phases: [] };
+    }
   }, [data, activePhase]);
-  const selectedStep = useMemo(
-    () => filteredSteps.find((step) => step.id === activeStepId) ?? filteredSteps[0] ?? null,
-    [activeStepId, filteredSteps]
-  );
-
-  useEffect(() => {
-    if (!filteredSteps.length) {
-      setActiveStepId(null);
-      return;
-    }
-
-    if (!activeStepId || !filteredSteps.some((step) => step.id === activeStepId)) {
-      setActiveStepId(filteredSteps[0].id);
-    }
-  }, [activeStepId, filteredSteps]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleStepClick = (id: string) => {
@@ -147,7 +157,7 @@ export default function TimelinePage() {
     <main className="min-h-screen bg-void flex flex-col" style={{ paddingTop: '64px' }}>
       <SEO 
         title="Election Journey Timeline"
-        description="Explore the Indian election process as a first-time voter journey, from roll checks and booth preparation to polling day and official results."
+        description="Explore the complete election process timeline from candidate registration to result certification. An interactive 3D map of democracy."
         path="/timeline"
       />
 
@@ -158,25 +168,18 @@ export default function TimelinePage() {
         className="relative flex flex-col items-center justify-center overflow-hidden border-b border-border"
         style={{ minHeight: '44vh' }}
       >
+        {/* Atmospheric background */}
         <div
           className="absolute inset-0 pointer-events-none"
           aria-hidden="true"
-          style={{
-            zIndex: 0,
-            background:
-              'radial-gradient(circle at 18% 25%, rgba(212,160,23,0.18), transparent 22%), radial-gradient(circle at 82% 20%, rgba(79,109,245,0.14), transparent 24%), linear-gradient(180deg, rgba(16,19,34,0.96), rgba(7,8,13,0.98))',
-          }}
-        />
-        <div
-          className="absolute inset-0 pointer-events-none opacity-25"
-          aria-hidden="true"
-          style={{
-            zIndex: 0,
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)',
-            backgroundSize: '52px 52px',
-          }}
-        />
+          style={{ opacity: 0.25, zIndex: 0 }}
+        >
+          {!prefersReducedMotion ? (
+            <DeferredThreeMount className="h-full w-full" fallback={<div className="h-full w-full" />}>
+              <TimelineHeroBackground3D />
+            </DeferredThreeMount>
+          ) : null}
+        </div>
 
         <div className="relative text-center px-5 sm:px-10 py-10 sm:py-14" style={{ zIndex: 1 }}>
           <motion.div
@@ -197,7 +200,7 @@ export default function TimelinePage() {
             className="font-display text-white leading-tight mb-3"
             style={{ fontSize: 'clamp(2rem, 7vw, 4rem)' }}
           >
-            The <span className="gold-gradient-text">First-Time Voter Journey</span>
+            The <span className="gold-gradient-text">Democratic Journey</span>
           </motion.h1>
 
           <motion.p
@@ -206,7 +209,7 @@ export default function TimelinePage() {
             transition={{ duration: 0.5, delay: 0.22 }}
             className="text-text-secondary max-w-md mx-auto text-sm sm:text-base leading-relaxed"
           >
-            Explore the steps a first-time voter should watch, from roll checks and booth preparation to polling day and official results.
+            Explore every major stage of an Indian election, from schedule announcement to government formation.
           </motion.p>
         </div>
       </section>
@@ -255,7 +258,7 @@ export default function TimelinePage() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          Two-column body: LEFT = cards, RIGHT = sticky snapshot
+          Two-column body: LEFT = cards, RIGHT = sticky orb chain
           Outer wrapper: max-width centred, flex row on desktop
       ════════════════════════════════════════════════════════════════════ */}
       <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row" style={{ minHeight: 0 }}>
@@ -263,7 +266,7 @@ export default function TimelinePage() {
         {/* ── LEFT: Scrollable content list ──────────────────────────── */}
         <section
           aria-label="Election process timeline"
-          className="flex-1 py-8 sm:py-10 px-6 sm:px-10 lg:px-12 lg:pr-8 min-w-0 pb-12 lg:pb-10"
+          className="flex-1 py-8 sm:py-10 px-6 sm:px-10 lg:px-12 lg:pr-8 min-w-0 pb-40 lg:pb-10"
         >
           <div className="max-w-xl w-full mx-auto">
 
@@ -283,25 +286,6 @@ export default function TimelinePage() {
                 )}
               </div>
             )}
-
-            {!loading && !error && selectedStep ? (
-              <div className="mb-5 rounded-2xl border border-gold/15 bg-gold/5 p-4 lg:hidden">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gold">
-                      Current Focus
-                    </p>
-                    <h2 className="mt-2 text-base font-bold text-white">{selectedStep.title}</h2>
-                  </div>
-                  <span className="rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">
-                    {selectedStep.phase}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                  {selectedStep.description}
-                </p>
-              </div>
-            ) : null}
 
             {/* States */}
             {loading ? (
@@ -461,11 +445,12 @@ export default function TimelinePage() {
           </div>
         </section>
 
-        {!loading && !error && filteredSteps.length > 0 && selectedStep ? (
+        {/* ── RIGHT: Sticky 3D orb chain — desktop only ──────────────── */}
+        {!loading && !error && filteredSteps.length > 0 && !prefersReducedMotion && (
           <aside
             className="hidden lg:flex flex-col"
             style={{
-              width: '360px',
+              width: '380px',
               flexShrink: 0,
               position: 'sticky',
               top: '128px',
@@ -473,8 +458,9 @@ export default function TimelinePage() {
               borderLeft: '1px solid var(--color-border)',
               background: 'linear-gradient(180deg, #0a0c18 0%, #07080d 100%)',
             }}
-            aria-label="Current timeline snapshot"
+            aria-hidden="true"
           >
+            {/* Subtle glow top */}
             <div
               className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
               style={{
@@ -483,123 +469,66 @@ export default function TimelinePage() {
               }}
             />
 
+            {/* Panel title */}
             <div
               className="flex items-center gap-2.5 px-6 py-4 border-b border-border/40"
               style={{ zIndex: 2 }}
             >
-              <span className="w-2 h-2 rounded-full bg-gold" />
+              <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
               <span className="text-xs uppercase tracking-widest text-text-secondary font-bold">
-                Process Snapshot
+                Process Map
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <div className="rounded-3xl border border-gold/15 bg-gold/5 p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">
-                    {selectedStep.phase}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-widest text-text-secondary">
-                    Step {selectedStep.order}
-                  </span>
-                </div>
-                <h2 className="mt-4 text-xl font-bold text-white">{selectedStep.title}</h2>
-                <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                  {selectedStep.description}
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] uppercase tracking-widest text-text-secondary">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                    <p className="text-[9px] text-text-secondary/60">Stage Context</p>
-                    <p className="mt-2 font-bold text-white">
-                      {PHASE_STAGE_MAP[selectedStep.phase] ?? 'Pre-Announcement'}
-                    </p>
+            {/* Canvas fills the rest */}
+            <div className="flex-1 relative" style={{ minHeight: 0 }}>
+              <DeferredThreeMount
+                className="h-full w-full"
+                fallback={
+                  <div className="flex h-full items-center justify-center px-6 text-center text-xs uppercase tracking-widest text-text-secondary/60">
+                    Loading process map…
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                    <p className="text-[9px] text-text-secondary/60">Typical Window</p>
-                    <p className="mt-2 font-bold text-white">{selectedStep.duration}</p>
-                  </div>
-                </div>
-                <ul className="mt-5 space-y-2">
-                  {selectedStep.details.slice(0, 3).map((detail) => (
-                    <li key={detail} className="flex items-start gap-2 text-sm leading-relaxed text-text-secondary">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gold" />
-                      <span>{detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mt-6 rounded-3xl border border-border/50 bg-abyss/60 p-5">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gold">
-                  Election Phase Order
-                </h3>
-                <div className="mt-4 space-y-3">
-                  {phases.map((phase) => {
-                    const phaseSteps = phase.steps.filter((step) =>
-                      filteredSteps.some((candidate) => candidate.id === step.id)
-                    );
-                    const isSelectedPhase = phase.name === selectedStep.phase;
-                    return (
-                      <button
-                        key={phase.id}
-                        type="button"
-                        onClick={() => {
-                          if (phaseSteps[0]) {
-                            handleStepClick(phaseSteps[0].id);
-                          }
-                        }}
-                        className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
-                          isSelectedPhase
-                            ? 'border-gold/30 bg-gold/10'
-                            : 'border-white/10 bg-white/5 hover:border-gold/20'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-semibold text-white">{phase.name}</span>
-                          <span className="text-[10px] uppercase tracking-widest text-text-secondary">
-                            {phaseSteps.length} step{phaseSteps.length === 1 ? '' : 's'}
-                          </span>
-                        </div>
-                        <div className="mt-3 h-1.5 rounded-full bg-white/5">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: isSelectedPhase ? '100%' : `${Math.max(18, phaseSteps.length * 22)}%`,
-                              backgroundColor: phase.color,
-                            }}
-                          />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="mt-6 rounded-3xl border border-border/50 bg-abyss/60 p-5">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gold">
-                  Official Verification
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                  Use these official channels for live dates, polling-station details, and result updates before acting.
-                </p>
-                <div className="mt-4 flex flex-col gap-3">
-                  {(data?.sources ?? []).map((source) => (
-                    <a
-                      key={source.url}
-                      href={source.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-text-secondary transition-colors hover:border-gold/30 hover:text-white"
-                    >
-                      <span className="block font-semibold text-white">{source.title}</span>
-                      <span className="mt-1 block break-all text-xs text-text-secondary">{source.url}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
+                }
+              >
+                <TimelineOrbPanel3D
+                  steps={filteredSteps}
+                  phases={phases}
+                  activeStepId={activeStepId}
+                  onOrbClick={handleStepClick}
+                  onOrbHover={(id: string) => {
+                    cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                />
+              </DeferredThreeMount>
             </div>
           </aside>
-        ) : null}
+        )}
+
+        {/* ── Mobile 3D strip — sticky at bottom ─── */}
+        {!loading && !error && filteredSteps.length > 0 && !prefersReducedMotion && (
+          <div
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 safe-area-bottom"
+            style={{ 
+              height: '140px', 
+              background: 'rgba(7, 8, 13, 0.9)', 
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 -10px 40px rgba(0,0,0,0.5)'
+            }}
+            aria-hidden="true"
+          >
+            <div className="absolute top-2 left-0 right-0 flex justify-center z-10 pointer-events-none">
+               <div className="w-12 h-1 rounded-full bg-border/40" />
+            </div>
+            <DeferredThreeMount className="h-full w-full" fallback={<div className="h-full w-full" />}>
+              <TimelineOrbPanel3D
+                steps={filteredSteps}
+                phases={phases}
+                activeStepId={activeStepId}
+                onOrbClick={handleStepClick}
+              />
+            </DeferredThreeMount>
+          </div>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
